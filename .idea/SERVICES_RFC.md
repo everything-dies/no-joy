@@ -178,6 +178,86 @@ export const searchProducts = (
 }
 ```
 
+### Namespace-level targeting
+
+`when()` accepts references at any depth of the service tree — not just
+individual methods, but entire domains (folders) and subtrees.
+
+```ts
+// method-level: react to one specific method
+when(services.posts.create, invalidate)
+
+// domain-level: react to ANY method in posts/
+when(services.posts, invalidate)
+
+// subtree-level: react to anything under c/, including c/d/ and c/d/e/
+when(services.c, invalidate)
+
+// mid-tree: react to anything under c/d/, including c/d/e/
+when(services.c.d, invalidate)
+```
+
+All four use the same `when()`. The first argument is just a different
+depth of the same tree. No new API, no new concept.
+
+**Depth behavior:** `when(services.c, invalidate)` reacts to every leaf
+in the subtree. `services.c.d.e.someMethod` firing would trigger it.
+The filesystem controls the scope — organize files to control blast radius.
+
+This replaces verbose multi-line declarations:
+
+```ts
+// before: enumerate every method
+when(services.posts.create, invalidate)
+when(services.posts.update, invalidate)
+when(services.posts.delete, invalidate)
+when(services.posts.archive, invalidate)
+
+// after: one line
+when(services.posts, invalidate)
+```
+
+**How it works internally:** When the framework receives a namespace
+object (not a function), it walks the tree and wires every leaf method.
+One declaration in user code, N edges in the dependency graph. The plugin
+can expand this at compile time — no runtime tree walking needed.
+
+**Interaction with callback form:**
+
+```ts
+// callback receives which specific method fired
+when(services.posts, ({ source, result }) => {
+  // source.name === 'create' | 'update' | 'delete' | ...
+  // source.domain === 'posts'
+  if (source.name === 'delete') {
+    invalidate() // only care about deletes
+  }
+})
+```
+
+This gives full control: broad targeting with narrow reaction. The
+consumer says "watch everything in this domain" but decides per-event
+whether to act.
+
+**Comparison to existing solutions:**
+
+| Library      | Closest equivalent                        | Limitation                        |
+|-------------|-------------------------------------------|-----------------------------------|
+| RTK Query   | `invalidatesTags: ['Posts']`              | Flat strings, no hierarchy        |
+| React Query | `invalidateQueries({ queryKey: ['posts'] })` | Manual key construction, prefix-only |
+| Apollo       | `refetchQueries: ['GetPosts']`            | Explicit query names, no grouping |
+| **nojoy**   | `when(services.posts, invalidate)`        | Structural, hierarchical, typed   |
+
+The key difference: nojoy's namespacing is *derived from the filesystem*.
+No manual tag strings, no key arrays, no query name registration.
+The folder structure is the namespace, and it's automatically typed.
+
+**Dead end to watch:** Namespace-level targeting makes the circular
+invalidation problem (see hazard #1) more likely. `when(services.posts, ...)`
+in a service that lives under `posts/` would include itself. The plugin
+must detect this: if the declaring method is a leaf of the targeted
+namespace, it's a self-reference and should error at compile time.
+
 ---
 
 ## Dead ends and hazards
@@ -374,7 +454,11 @@ type DataPlane = {
   services: NojoyServices
 }
 
-type ServiceRef<T> = /* opaque reference to a service method with return type T */
+// A ServiceRef is either a single method or a namespace (object of methods/namespaces).
+// when() accepts both — namespace targets expand to all leaves at compile time.
+type ServiceMethod = (...args: any[]) => any
+type ServiceNamespace = { [key: string]: ServiceMethod | ServiceNamespace }
+type ServiceRef = ServiceMethod | ServiceNamespace
 
 type InvalidateOptions = {
   where?: (cachedArgs: unknown[]) => boolean
@@ -385,6 +469,11 @@ type WhenPayload<T> = {
   result: T
   status: 'success' | 'error'
   error?: Error
+  source: {                     // which specific method fired
+    name: string                // e.g. 'create'
+    domain: string              // e.g. 'posts'
+    path: string                // e.g. 'posts.create'
+  }
 }
 
 type WhenHandler<T> =
@@ -392,7 +481,8 @@ type WhenHandler<T> =
   | typeof invalidate
 
 type ControlPlane = {
-  when: <T>(source: ServiceRef<T>, handler: WhenHandler<T>) => void
+  // Accepts a method ref OR a namespace — namespace expands to all leaves
+  when: <T>(source: ServiceRef, handler: WhenHandler<T>) => void
   invalidate: (options?: InvalidateOptions) => void
   emit: <T>(data: T) => void
   optimistic: <T>(
