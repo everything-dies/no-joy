@@ -1,0 +1,26 @@
+{
+  "name": "nojoy-sandbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.1.4",
+    "axios": "^1.13.4",
+    "nojoy": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.3",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
+  }
+}

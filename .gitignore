@@ -4,9 +4,7 @@ node_modules/
 # Build output
 dist/
 
-# IDE
-.idea/
-.vscode/
+# IDE (personal)
 *.swp
 *.swo
 
