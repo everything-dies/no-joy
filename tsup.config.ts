@@ -10,7 +10,7 @@ export default defineConfig({
   clean: true,
   splitting: false,
   treeshake: true,
-  external: ['vite', 'react', 'react-dom'],
+  external: ['vite', 'react', 'react-dom', 'xstate', '@xstate/react'],
   esbuildOptions(options) {
     options.platform = 'node'
     options.target = 'node20'

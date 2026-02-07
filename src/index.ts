@@ -1,1 +1,1 @@
-// nojoy - blank canvas
+export { useLatency, type UseLatencyReturn } from './hooks/latency'
