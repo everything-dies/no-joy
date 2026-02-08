@@ -1,11 +1,17 @@
-import axios from 'axios'
+export interface RestClient {
+  get<T>(path: string): Promise<T>
+}
 
-export default () => {
-  const client = axios.create({
-    baseURL: 'https://some-domain.com/api/',
-    headers: { 'X-Custom-Header': 'foobar' },
-    timeout: 1000,
-  })
+export default (): RestClient => {
+  const baseURL = 'https://jsonplaceholder.typicode.com'
 
-  return client
+  return {
+    async get<T>(path: string): Promise<T> {
+      const response = await fetch(`${baseURL}${path}`)
+      if (!response.ok) {
+        throw new Error(`GET ${path} failed: ${response.status}`)
+      }
+      return response.json() as Promise<T>
+    },
+  }
 }
