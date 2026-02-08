@@ -24,7 +24,7 @@ export interface ScanResult {
   components: ComponentEntry[]
 }
 
-const CONCERN_FILES = new Set(['async'])
+const CONCERN_FILES = new Set(['async', 'placeholder', 'error'])
 
 const VIEW_EXTENSIONS = ['.tsx', '.jsx']
 const ENTRY_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx']
@@ -115,6 +115,15 @@ function scanComponents(
         const concernPath = findFile(dirPath, concern, ENTRY_EXTENSIONS)
         if (concernPath) {
           concerns[concern] = concernPath
+        } else {
+          // Check for directory pattern (e.g., error/index.tsx)
+          const subDir = join(dirPath, concern)
+          if (existsSync(subDir) && statSync(subDir).isDirectory()) {
+            const indexPath = findFile(subDir, 'index', ENTRY_EXTENSIONS)
+            if (indexPath) {
+              concerns[concern] = indexPath
+            }
+          }
         }
       }
 

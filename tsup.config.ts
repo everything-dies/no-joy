@@ -11,7 +11,7 @@ export default defineConfig({
   clean: true,
   splitting: false,
   treeshake: true,
-  external: ['vite', 'react', 'react-dom', 'xstate', '@xstate/react'],
+  external: ['vite', 'react', 'react-dom', 'react-error-boundary', 'xstate', '@xstate/react'],
   esbuildOptions(options) {
     options.platform = 'node'
     options.target = 'node20'

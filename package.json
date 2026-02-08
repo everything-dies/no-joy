@@ -73,6 +73,7 @@
     "debug": "^4.4.3",
     "fast-glob": "^3.3.3",
     "picomatch": "^4.0.3",
+    "react-error-boundary": "^6.1.0",
     "xstate": "^5.26.0"
   },
   "devDependencies": {

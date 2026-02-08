@@ -29,33 +29,42 @@ export function generatePrefix(): string {
   return `_${hash}$`
 }
 
+interface ConcernPaths {
+  async: string | undefined
+  placeholder: string | undefined
+  error: string | undefined
+}
+
 function buildImports(
   prefix: string,
-  viewPath: string,
-  asyncConcernPath: string | undefined,
+  concerns: ConcernPaths,
   asyncExports: string[]
-): t.ImportDeclaration[] {
-  const imports: t.ImportDeclaration[] = []
+): t.Statement[] {
+  const statements: t.Statement[] = []
 
-  // import { createElement as __nojoy$createElement } from 'react'
-  imports.push(
-    t.importDeclaration(
-      [t.importSpecifier(t.identifier(`${prefix}createElement`), t.identifier('createElement'))],
-      t.stringLiteral('react')
+  // React imports: createElement (always), lazy (always), Suspense (if placeholder)
+  const reactSpecifiers: t.ImportSpecifier[] = [
+    t.importSpecifier(t.identifier(`${prefix}createElement`), t.identifier('createElement')),
+    t.importSpecifier(t.identifier(`${prefix}lazy`), t.identifier('lazy')),
+  ]
+  if (concerns.placeholder) {
+    reactSpecifiers.push(
+      t.importSpecifier(t.identifier(`${prefix}Suspense`), t.identifier('Suspense'))
     )
+  }
+  statements.push(
+    t.importDeclaration(reactSpecifiers, t.stringLiteral('react'))
   )
 
-  // import { useNojoy as __nojoy$useNojoy } from 'nojoy/runtime'
-  imports.push(
-    t.importDeclaration(
-      [t.importSpecifier(t.identifier(`${prefix}useNojoy`), t.identifier('useNojoy'))],
-      t.stringLiteral('nojoy/runtime')
-    )
-  )
-
-  // import { useAsyncHandler as __nojoy$useAsyncHandler } from 'nojoy/runtime'
+  // nojoy/runtime imports (only if async exports exist)
   if (asyncExports.length > 0) {
-    imports.push(
+    statements.push(
+      t.importDeclaration(
+        [t.importSpecifier(t.identifier(`${prefix}useNojoy`), t.identifier('useNojoy'))],
+        t.stringLiteral('nojoy/runtime')
+      )
+    )
+    statements.push(
       t.importDeclaration(
         [t.importSpecifier(t.identifier(`${prefix}useAsyncHandler`), t.identifier('useAsyncHandler'))],
         t.stringLiteral('nojoy/runtime')
@@ -63,62 +72,105 @@ function buildImports(
     )
   }
 
-  // import __nojoy$View from '<viewPath>'
-  imports.push(
-    t.importDeclaration(
-      [t.importDefaultSpecifier(t.identifier(`${prefix}View`))],
-      t.stringLiteral(viewPath)
-    )
-  )
-
-  // import { click, submit } from '<asyncConcernPath>' — user-authored, no prefix
-  if (asyncConcernPath && asyncExports.length > 0) {
-    imports.push(
+  // ErrorBoundary import (if error concern exists)
+  if (concerns.error) {
+    statements.push(
       t.importDeclaration(
-        asyncExports.map((name) =>
-          t.importSpecifier(t.identifier(name), t.identifier(name))
-        ),
-        t.stringLiteral(asyncConcernPath)
+        [t.importSpecifier(t.identifier(`${prefix}ErrorBoundary`), t.identifier('ErrorBoundary'))],
+        t.stringLiteral('react-error-boundary')
+      )
+    )
+    statements.push(
+      t.importDeclaration(
+        [t.importDefaultSpecifier(t.identifier(`${prefix}ErrorFallback`))],
+        t.stringLiteral(concerns.error)
       )
     )
   }
 
-  return imports
+  // Placeholder import (if placeholder concern exists)
+  if (concerns.placeholder) {
+    statements.push(
+      t.importDeclaration(
+        [t.importDefaultSpecifier(t.identifier(`${prefix}Placeholder`))],
+        t.stringLiteral(concerns.placeholder)
+      )
+    )
+  }
+
+  // Async factory imports — user-authored, no prefix
+  if (concerns.async && asyncExports.length > 0) {
+    statements.push(
+      t.importDeclaration(
+        asyncExports.map((name) =>
+          t.importSpecifier(t.identifier(name), t.identifier(name))
+        ),
+        t.stringLiteral(concerns.async)
+      )
+    )
+  }
+
+  // View: const _x$View = _x$lazy(() => import("viewPath"))
+  // This is a variable declaration, not an import — appended after imports
+
+  return statements
+}
+
+function buildViewDeclaration(
+  prefix: string,
+  viewPath: string
+): t.VariableDeclaration {
+  // const _x$View = _x$lazy(() => import("viewPath"))
+  return t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.identifier(`${prefix}View`),
+      t.callExpression(t.identifier(`${prefix}lazy`), [
+        t.arrowFunctionExpression(
+          [],
+          t.callExpression(t.import(), [t.stringLiteral(viewPath)])
+        ),
+      ])
+    ),
+  ])
 }
 
 function buildComponentFunction(
   prefix: string,
   displayName: string,
-  asyncExports: string[]
+  asyncExports: string[],
+  concerns: ConcernPaths
 ): t.FunctionDeclaration {
   const body: t.Statement[] = []
 
-  // const __nojoy$dataPlane = __nojoy$useNojoy()
-  body.push(
-    t.variableDeclaration('const', [
-      t.variableDeclarator(
-        t.identifier(`${prefix}dataPlane`),
-        t.callExpression(t.identifier(`${prefix}useNojoy`), [])
-      ),
-    ])
-  )
-
-  // const __nojoy$click = __nojoy$useAsyncHandler(click, __nojoy$dataPlane)
-  for (const name of asyncExports) {
+  // Hook calls (only if async exports exist)
+  if (asyncExports.length > 0) {
+    // const _x$dataPlane = _x$useNojoy()
     body.push(
       t.variableDeclaration('const', [
         t.variableDeclarator(
-          t.identifier(`${prefix}${name}`),
-          t.callExpression(t.identifier(`${prefix}useAsyncHandler`), [
-            t.identifier(name),
-            t.identifier(`${prefix}dataPlane`),
-          ])
+          t.identifier(`${prefix}dataPlane`),
+          t.callExpression(t.identifier(`${prefix}useNojoy`), [])
         ),
       ])
     )
+
+    // const _x$click = _x$useAsyncHandler(click, _x$dataPlane)
+    for (const name of asyncExports) {
+      body.push(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier(`${prefix}${name}`),
+            t.callExpression(t.identifier(`${prefix}useAsyncHandler`), [
+              t.identifier(name),
+              t.identifier(`${prefix}dataPlane`),
+            ])
+          ),
+        ])
+      )
+    }
   }
 
-  // return __nojoy$createElement(__nojoy$View, { ...__nojoy$props, click: __nojoy$click })
+  // Build view element props
   const propsArg =
     asyncExports.length > 0
       ? t.objectExpression([
@@ -132,37 +184,66 @@ function buildComponentFunction(
         ])
       : t.identifier(`${prefix}props`)
 
-  body.push(
-    t.returnStatement(
-      t.callExpression(t.identifier(`${prefix}createElement`), [
-        t.identifier(`${prefix}View`),
-        propsArg,
-      ])
-    )
+  // Build view element: createElement(View, propsArg)
+  let element: t.Expression = t.callExpression(
+    t.identifier(`${prefix}createElement`),
+    [t.identifier(`${prefix}View`), propsArg]
   )
 
-  const fn = t.functionDeclaration(
+  // Wrap with Suspense if placeholder exists
+  if (concerns.placeholder) {
+    // createElement(Suspense, { fallback: createElement(Placeholder, null) }, viewElement)
+    element = t.callExpression(t.identifier(`${prefix}createElement`), [
+      t.identifier(`${prefix}Suspense`),
+      t.objectExpression([
+        t.objectProperty(
+          t.identifier('fallback'),
+          t.callExpression(t.identifier(`${prefix}createElement`), [
+            t.identifier(`${prefix}Placeholder`),
+            t.nullLiteral(),
+          ])
+        ),
+      ]),
+      element,
+    ])
+  }
+
+  // Wrap with ErrorBoundary if error exists
+  if (concerns.error) {
+    // createElement(ErrorBoundary, { FallbackComponent: ErrorFallback }, element)
+    element = t.callExpression(t.identifier(`${prefix}createElement`), [
+      t.identifier(`${prefix}ErrorBoundary`),
+      t.objectExpression([
+        t.objectProperty(
+          t.identifier('FallbackComponent'),
+          t.identifier(`${prefix}ErrorFallback`)
+        ),
+      ]),
+      element,
+    ])
+  }
+
+  body.push(t.returnStatement(element))
+
+  return t.functionDeclaration(
     t.identifier(`Nojoy${displayName}`),
     [t.identifier(`${prefix}props`)],
     t.blockStatement(body)
   )
-
-  return fn
 }
 
 export function generateComponentWrapper(component: ComponentEntry, prefix: string): string {
-  const asyncConcern = component.concerns['async']
-  const asyncExports = asyncConcern ? extractExportNames(asyncConcern) : []
+  const concerns: ConcernPaths = {
+    async: component.concerns['async'],
+    placeholder: component.concerns['placeholder'],
+    error: component.concerns['error'],
+  }
+  const asyncExports = concerns.async ? extractExportNames(concerns.async) : []
   const displayName = buildDisplayName(component.name)
 
-  const imports = buildImports(
-    prefix,
-    component.viewPath,
-    asyncConcern,
-    asyncExports
-  )
-
-  const componentFn = buildComponentFunction(prefix, displayName, asyncExports)
+  const imports = buildImports(prefix, concerns, asyncExports)
+  const viewDecl = buildViewDeclaration(prefix, component.viewPath)
+  const componentFn = buildComponentFunction(prefix, displayName, asyncExports, concerns)
 
   // Nojoy<Name>.displayName = '<Name>'
   const displayNameAssignment = t.expressionStatement(
@@ -183,6 +264,7 @@ export function generateComponentWrapper(component: ComponentEntry, prefix: stri
 
   const program = t.program([
     ...imports,
+    viewDecl,
     componentFn,
     displayNameAssignment,
     defaultExport,

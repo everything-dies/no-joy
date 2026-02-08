@@ -60,7 +60,15 @@ describe('scan', () => {
 
       const names = result.components.map((c) => c.name).sort()
       // 'plain' has no concern files, should be excluded
-      expect(names).toEqual(['button', 'form', 'widgets/card'])
+      expect(names).toEqual([
+        'button',
+        'form',
+        'full',
+        'widgets/card',
+        'with-error',
+        'with-error-dir',
+        'with-placeholder',
+      ])
     })
 
     it('excludes components without concern files', () => {
@@ -87,6 +95,52 @@ describe('scan', () => {
       expect(card?.viewPath).toContain('components/widgets/card/index.tsx')
       expect(card?.concerns['async']).toContain(
         'components/widgets/card/async.ts'
+      )
+    })
+
+    it('discovers placeholder concern', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find(
+        (c) => c.name === 'with-placeholder'
+      )
+
+      expect(comp).toBeDefined()
+      expect(comp?.concerns['placeholder']).toContain(
+        'components/with-placeholder/placeholder.tsx'
+      )
+    })
+
+    it('discovers error concern as file', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-error')
+
+      expect(comp).toBeDefined()
+      expect(comp?.concerns['error']).toContain(
+        'components/with-error/error.tsx'
+      )
+    })
+
+    it('discovers error concern as directory with index', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-error-dir')
+
+      expect(comp).toBeDefined()
+      expect(comp?.concerns['error']).toContain(
+        'components/with-error-dir/error/index.tsx'
+      )
+    })
+
+    it('discovers all concerns on full component', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'full')
+
+      expect(comp).toBeDefined()
+      expect(comp?.concerns['async']).toContain('components/full/async.ts')
+      expect(comp?.concerns['placeholder']).toContain(
+        'components/full/placeholder.tsx'
+      )
+      expect(comp?.concerns['error']).toContain(
+        'components/full/error.tsx'
       )
     })
 
