@@ -106,38 +106,35 @@ jobs:
           node -e "import('./dist/index.js')"
           node -e "import('./dist/runtime.js')"
 
-  release:
-    name: Release
-    needs: [lint, typecheck, test, build]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v3
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm build
-
-      - name: Create Release PR or Publish
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: pnpm release
-          version: pnpm version
-          commit: "chore: release"
-          title: "chore: release"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  # Release job — disabled until NPM_TOKEN secret is configured
+  # and the project is ready for npm publishing.
+  # release:
+  #   name: Release
+  #   needs: [lint, typecheck, test, build]
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: pnpm/action-setup@v3
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: pnpm
+  #     - name: Install dependencies
+  #       run: pnpm install --frozen-lockfile
+  #     - name: Build
+  #       run: pnpm build
+  #     - name: Create Release PR or Publish
+  #       id: changesets
+  #       uses: changesets/action@v1
+  #       with:
+  #         publish: pnpm release
+  #         version: pnpm version
+  #         commit: "chore: release"
+  #         title: "chore: release"
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
