@@ -15,14 +15,16 @@ function deferred<T>() {
 }
 
 describe('useLatency', () => {
-  it('returns initial state with pending false and error undefined', () => {
+  it('returns initial state with idle status', () => {
     const { result } = renderHook(() => useLatency())
 
     expect(result.current.pending).toBe(false)
+    expect(result.current.data).toBeUndefined()
     expect(result.current.error).toBeUndefined()
+    expect(result.current.status).toBe('idle')
   })
 
-  it('sets pending to true when watch is called', () => {
+  it('sets pending to true and status to loading when watch is called', () => {
     const { result } = renderHook(() => useLatency<string>())
     const { promise } = deferred<string>()
 
@@ -31,9 +33,10 @@ describe('useLatency', () => {
     })
 
     expect(result.current.pending).toBe(true)
+    expect(result.current.status).toBe('loading')
   })
 
-  it('sets pending to false when promise resolves', async () => {
+  it('sets data and status to success when promise resolves', async () => {
     const { result } = renderHook(() => useLatency<string>())
     const { promise, resolve } = deferred<string>()
 
@@ -49,10 +52,12 @@ describe('useLatency', () => {
 
     await waitFor(() => {
       expect(result.current.pending).toBe(false)
+      expect(result.current.data).toBe('done')
+      expect(result.current.status).toBe('success')
     })
   })
 
-  it('sets error when promise rejects', async () => {
+  it('sets error and status to error when promise rejects', async () => {
     const { result } = renderHook(() => useLatency<string, Error>())
     const { promise, reject } = deferred<string>()
 
@@ -68,6 +73,7 @@ describe('useLatency', () => {
       expect(result.current.error).toBeInstanceOf(Error)
       expect(result.current.error?.message).toBe('fail')
       expect(result.current.pending).toBe(false)
+      expect(result.current.status).toBe('error')
     })
   })
 

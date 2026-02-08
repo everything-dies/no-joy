@@ -5,7 +5,7 @@ import { useMachine } from '@xstate/react'
 import { latencyMachine } from './machine'
 import { createStaleGuard, type StaleGuard } from './stale-guard'
 
-import { type UseLatencyReturn } from './types'
+import { type LatencyStatus, type UseLatencyReturn } from './types'
 
 export function useLatency<
   TData = unknown,
@@ -51,10 +51,20 @@ export function useLatency<
     send({ type: 'ABORT' })
   }, [send])
 
+  const status: LatencyStatus = snapshot.matches('pending')
+    ? 'loading'
+    : snapshot.matches('fulfilled')
+      ? 'success'
+      : snapshot.matches('rejected')
+        ? 'error'
+        : 'idle'
+
   return {
     abort,
+    data: snapshot.context.data as TData | undefined,
     error: snapshot.context.error as TError | undefined,
-    pending: snapshot.matches('pending'),
+    pending: status === 'loading',
+    status,
     watch,
   }
 }

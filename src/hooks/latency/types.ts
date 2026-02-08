@@ -16,9 +16,13 @@ export type LatencyStateValue =
   | 'fulfilled'
   | 'rejected'
 
+export type LatencyStatus = 'idle' | 'loading' | 'success' | 'error'
+
 export interface UseLatencyReturn<TData, TError> {
   abort: () => void
+  data: TData | undefined
   error: TError | undefined
   pending: boolean
+  status: LatencyStatus
   watch: (promise: Promise<TData>) => void
 }

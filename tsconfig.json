@@ -23,6 +23,7 @@
     "baseUrl": ".",
     "paths": {
       "nojoy": ["./src/index.ts"],
+      "nojoy/runtime": ["./src/runtime.ts"],
       "nojoy/*": ["./src/*"]
     }
   },

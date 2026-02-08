@@ -1,2 +1,2 @@
 export { useLatency } from './use-latency'
-export { type UseLatencyReturn } from './types'
+export { type LatencyStatus, type UseLatencyReturn } from './types'
