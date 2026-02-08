@@ -1,5 +1,9 @@
 // React runtime — hooks, context, and factories
-export { NojoyProvider, useNojoy, type NojoyProviderProps } from './runtime/index'
+export {
+  NojoyProvider,
+  useNojoy,
+  type NojoyProviderProps,
+} from './runtime/index'
 export {
   createClients,
   createServices,

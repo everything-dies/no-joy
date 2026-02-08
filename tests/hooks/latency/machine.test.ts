@@ -1,5 +1,5 @@
-import { createActor } from 'xstate'
 import { describe, expect, it } from 'vitest'
+import { createActor } from 'xstate'
 
 import { latencyMachine } from '../../../src/hooks/latency/machine'
 

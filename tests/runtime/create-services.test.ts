@@ -8,16 +8,17 @@ describe('createServices', () => {
     const factory = vi.fn(() => inner)
     const clients = { rest: { get: vi.fn() } }
 
-    const services = createServices(
-      { users: { getById: factory } },
-      clients
-    )
+    const services = createServices({ users: { getById: factory } }, clients)
 
     expect(factory).toHaveBeenCalledTimes(1)
     expect(factory).toHaveBeenCalledWith(
       expect.objectContaining({ clients, services })
     )
-    expect((services as Record<string, Record<string, unknown>>)['users']?.['getById']).toBe(inner)
+    expect(
+      (services as Record<string, Record<string, unknown>>)['users']?.[
+        'getById'
+      ]
+    ).toBe(inner)
   })
 
   it('supports multiple namespaces with multiple methods', () => {
@@ -51,17 +52,25 @@ describe('createServices', () => {
           getById: () => (id: string) => ({ id, name: 'Alice' }),
         },
         posts: {
-          getByUser: ({ services: svc }) => (userId: string) => {
-            const s = svc as Record<string, Record<string, (id: string) => unknown>>
-            const user = s['users']?.['getById']?.(userId)
-            return { user, posts: [] }
-          },
+          getByUser:
+            ({ services: svc }) =>
+            (userId: string) => {
+              const s = svc as Record<
+                string,
+                Record<string, (id: string) => unknown>
+              >
+              const user = s['users']?.['getById']?.(userId)
+              return { user, posts: [] }
+            },
         },
       },
       {}
     )
 
-    const s = services as Record<string, Record<string, (...args: unknown[]) => unknown>>
+    const s = services as Record<
+      string,
+      Record<string, (...args: unknown[]) => unknown>
+    >
     const result = s['posts']?.['getByUser']?.('123')
     expect(result).toEqual({
       user: { id: '123', name: 'Alice' },

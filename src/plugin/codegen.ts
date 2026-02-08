@@ -2,7 +2,6 @@ import _generate from '@babel/generator'
 import * as t from '@babel/types'
 
 import { extractExportNames } from './exports'
-
 import { type ComponentEntry } from './scanner'
 
 // Handle CJS/ESM interop for @babel/generator
@@ -44,12 +43,18 @@ function buildImports(
 
   // React imports: createElement (always), lazy (always), Suspense (if placeholder)
   const reactSpecifiers: t.ImportSpecifier[] = [
-    t.importSpecifier(t.identifier(`${prefix}createElement`), t.identifier('createElement')),
+    t.importSpecifier(
+      t.identifier(`${prefix}createElement`),
+      t.identifier('createElement')
+    ),
     t.importSpecifier(t.identifier(`${prefix}lazy`), t.identifier('lazy')),
   ]
   if (concerns.placeholder) {
     reactSpecifiers.push(
-      t.importSpecifier(t.identifier(`${prefix}Suspense`), t.identifier('Suspense'))
+      t.importSpecifier(
+        t.identifier(`${prefix}Suspense`),
+        t.identifier('Suspense')
+      )
     )
   }
   statements.push(
@@ -60,13 +65,23 @@ function buildImports(
   if (asyncExports.length > 0) {
     statements.push(
       t.importDeclaration(
-        [t.importSpecifier(t.identifier(`${prefix}useNojoy`), t.identifier('useNojoy'))],
+        [
+          t.importSpecifier(
+            t.identifier(`${prefix}useNojoy`),
+            t.identifier('useNojoy')
+          ),
+        ],
         t.stringLiteral('nojoy/runtime')
       )
     )
     statements.push(
       t.importDeclaration(
-        [t.importSpecifier(t.identifier(`${prefix}useAsyncHandler`), t.identifier('useAsyncHandler'))],
+        [
+          t.importSpecifier(
+            t.identifier(`${prefix}useAsyncHandler`),
+            t.identifier('useAsyncHandler')
+          ),
+        ],
         t.stringLiteral('nojoy/runtime')
       )
     )
@@ -76,7 +91,12 @@ function buildImports(
   if (concerns.error) {
     statements.push(
       t.importDeclaration(
-        [t.importSpecifier(t.identifier(`${prefix}ErrorBoundary`), t.identifier('ErrorBoundary'))],
+        [
+          t.importSpecifier(
+            t.identifier(`${prefix}ErrorBoundary`),
+            t.identifier('ErrorBoundary')
+          ),
+        ],
         t.stringLiteral('react-error-boundary')
       )
     )
@@ -232,7 +252,10 @@ function buildComponentFunction(
   )
 }
 
-export function generateComponentWrapper(component: ComponentEntry, prefix: string): string {
+export function generateComponentWrapper(
+  component: ComponentEntry,
+  prefix: string
+): string {
   const concerns: ConcernPaths = {
     async: component.concerns['async'],
     placeholder: component.concerns['placeholder'],
@@ -243,7 +266,12 @@ export function generateComponentWrapper(component: ComponentEntry, prefix: stri
 
   const imports = buildImports(prefix, concerns, asyncExports)
   const viewDecl = buildViewDeclaration(prefix, component.viewPath)
-  const componentFn = buildComponentFunction(prefix, displayName, asyncExports, concerns)
+  const componentFn = buildComponentFunction(
+    prefix,
+    displayName,
+    asyncExports,
+    concerns
+  )
 
   // Nojoy<Name>.displayName = '<Name>'
   const displayNameAssignment = t.expressionStatement(

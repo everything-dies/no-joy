@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { scan } from '../../src/plugin/scanner'
@@ -82,9 +83,7 @@ describe('scan', () => {
       const button = result.components.find((c) => c.name === 'button')
 
       expect(button?.viewPath).toContain('components/button/index.tsx')
-      expect(button?.concerns['async']).toContain(
-        'components/button/async.ts'
-      )
+      expect(button?.concerns['async']).toContain('components/button/async.ts')
     })
 
     it('discovers nested components', () => {
@@ -100,9 +99,7 @@ describe('scan', () => {
 
     it('discovers placeholder concern', () => {
       const result = scan(BASIC)
-      const comp = result.components.find(
-        (c) => c.name === 'with-placeholder'
-      )
+      const comp = result.components.find((c) => c.name === 'with-placeholder')
 
       expect(comp).toBeDefined()
       expect(comp?.concerns['placeholder']).toContain(
@@ -139,9 +136,7 @@ describe('scan', () => {
       expect(comp?.concerns['placeholder']).toContain(
         'components/full/placeholder.tsx'
       )
-      expect(comp?.concerns['error']).toContain(
-        'components/full/error.tsx'
-      )
+      expect(comp?.concerns['error']).toContain('components/full/error.tsx')
     })
 
     it('returns empty array when components dir missing', () => {

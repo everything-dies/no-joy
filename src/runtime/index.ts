@@ -6,4 +6,8 @@ export {
   type ClientFactoryMap,
   type ClientRegistry,
 } from './create-clients'
-export { createServices, type ServiceEntry, type ServiceModuleMap } from './create-services'
+export {
+  createServices,
+  type ServiceEntry,
+  type ServiceModuleMap,
+} from './create-services'

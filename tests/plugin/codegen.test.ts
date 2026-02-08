@@ -1,7 +1,11 @@
 import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
-import { generateComponentWrapper, generatePrefix } from '../../src/plugin/codegen'
+import {
+  generateComponentWrapper,
+  generatePrefix,
+} from '../../src/plugin/codegen'
 
 import type { ComponentEntry } from '../../src/plugin/scanner'
 
@@ -91,7 +95,10 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/with-placeholder'),
         viewPath: resolve(FIXTURES, 'components/with-placeholder/index.tsx'),
         concerns: {
-          placeholder: resolve(FIXTURES, 'components/with-placeholder/placeholder.tsx'),
+          placeholder: resolve(
+            FIXTURES,
+            'components/with-placeholder/placeholder.tsx'
+          ),
         },
       }
 
@@ -109,7 +116,10 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/with-placeholder'),
         viewPath: resolve(FIXTURES, 'components/with-placeholder/index.tsx'),
         concerns: {
-          placeholder: resolve(FIXTURES, 'components/with-placeholder/placeholder.tsx'),
+          placeholder: resolve(
+            FIXTURES,
+            'components/with-placeholder/placeholder.tsx'
+          ),
         },
       }
 
@@ -127,7 +137,10 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/with-placeholder'),
         viewPath: resolve(FIXTURES, 'components/with-placeholder/index.tsx'),
         concerns: {
-          placeholder: resolve(FIXTURES, 'components/with-placeholder/placeholder.tsx'),
+          placeholder: resolve(
+            FIXTURES,
+            'components/with-placeholder/placeholder.tsx'
+          ),
         },
       }
 
@@ -233,7 +246,9 @@ describe('generateComponentWrapper', () => {
         name: 'widgets/card',
         dir: resolve(FIXTURES, 'components/widgets/card'),
         viewPath: resolve(FIXTURES, 'components/widgets/card/index.tsx'),
-        concerns: { async: resolve(FIXTURES, 'components/widgets/card/async.ts') },
+        concerns: {
+          async: resolve(FIXTURES, 'components/widgets/card/async.ts'),
+        },
       }
 
       const code = generateComponentWrapper(component, P)

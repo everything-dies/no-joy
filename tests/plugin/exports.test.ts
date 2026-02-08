@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { extractExportNames } from '../../src/plugin/exports'
@@ -22,9 +23,7 @@ describe('extractExportNames', () => {
 
   it('returns empty array for files with no named exports', () => {
     // The client index.ts only has a default export
-    const names = extractExportNames(
-      resolve(FIXTURES, 'clients/rest/index.ts')
-    )
+    const names = extractExportNames(resolve(FIXTURES, 'clients/rest/index.ts'))
     expect(names).toEqual([])
   })
 })

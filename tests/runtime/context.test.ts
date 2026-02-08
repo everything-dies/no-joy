@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-import { createElement } from 'react'
 import { renderHook } from '@testing-library/react'
+import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
 
 import { NojoyProvider, useNojoy } from '../../src/runtime'

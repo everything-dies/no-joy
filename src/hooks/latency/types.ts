@@ -10,11 +10,7 @@ export type LatencyEvent =
   | { type: 'ABORT' }
   | { type: 'RESET' }
 
-export type LatencyStateValue =
-  | 'idle'
-  | 'pending'
-  | 'fulfilled'
-  | 'rejected'
+export type LatencyStateValue = 'idle' | 'pending' | 'fulfilled' | 'rejected'
 
 export type LatencyStatus = 'idle' | 'loading' | 'success' | 'error'
 

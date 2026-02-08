@@ -7,14 +7,14 @@ import { type AsyncFactory, type AsyncHandler, type DataPlane } from './types'
 export function useAsyncHandler<
   TArgs extends unknown[] = unknown[],
   TData = unknown,
->(factory: AsyncFactory<TArgs, TData>, dataPlane: DataPlane): AsyncHandler<TArgs, TData> {
+>(
+  factory: AsyncFactory<TArgs, TData>,
+  dataPlane: DataPlane
+): AsyncHandler<TArgs, TData> {
   const { abort, data, error, pending, status, watch } = useLatency<TData>()
   const lastArgsRef = useRef<TArgs | undefined>(undefined)
 
-  const handler = useMemo(
-    () => factory(dataPlane),
-    [factory, dataPlane]
-  )
+  const handler = useMemo(() => factory(dataPlane), [factory, dataPlane])
 
   const invoke = useCallback(
     (...args: TArgs) => {

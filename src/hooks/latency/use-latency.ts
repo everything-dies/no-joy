@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react'
-
 import { useMachine } from '@xstate/react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { latencyMachine } from './machine'
 import { createStaleGuard, type StaleGuard } from './stale-guard'
-
 import { type LatencyStatus, type UseLatencyReturn } from './types'
 
 export function useLatency<

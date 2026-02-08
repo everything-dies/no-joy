@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 
 import { nojoyPlugin } from '../../src/plugin/vite-plugin'
@@ -8,7 +9,10 @@ import { nojoyPlugin } from '../../src/plugin/vite-plugin'
 import type { Plugin, ResolvedConfig } from 'vite'
 
 function createTmpSrcDir(): string {
-  const dir = join(tmpdir(), `nojoy-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  const dir = join(
+    tmpdir(),
+    `nojoy-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  )
   mkdirSync(join(dir, 'src', 'components'), { recursive: true })
   mkdirSync(join(dir, 'src', 'services'), { recursive: true })
   mkdirSync(join(dir, 'src', 'clients'), { recursive: true })
@@ -53,7 +57,10 @@ describe('nojoyPlugin', () => {
 
       // button has async concern → resolves to virtual module
       const buttonDir = join(root, 'src', 'components', 'button')
-      const resolveId = plugin.resolveId as (source: string, importer: string) => string | undefined
+      const resolveId = plugin.resolveId as (
+        source: string,
+        importer: string
+      ) => string | undefined
       const result = resolveId(
         './components/button',
         join(root, 'src', 'App.tsx')
@@ -76,7 +83,10 @@ describe('nojoyPlugin', () => {
       const plugin = nojoyPlugin()
       initPlugin(plugin, root)
 
-      const resolveId = plugin.resolveId as (source: string, importer: string) => string | undefined
+      const resolveId = plugin.resolveId as (
+        source: string,
+        importer: string
+      ) => string | undefined
       const result = resolveId(
         './components/card',
         join(root, 'src', 'App.tsx')
@@ -92,7 +102,10 @@ describe('nojoyPlugin', () => {
       const plugin = nojoyPlugin()
       initPlugin(plugin, root)
 
-      const resolveId = plugin.resolveId as (source: string, importer: string) => string | undefined
+      const resolveId = plugin.resolveId as (
+        source: string,
+        importer: string
+      ) => string | undefined
       const result = resolveId('react', join(root, 'src', 'App.tsx'))
 
       expect(result).toBeUndefined()
@@ -102,7 +115,10 @@ describe('nojoyPlugin', () => {
       const plugin = nojoyPlugin()
       initPlugin(plugin, root)
 
-      const resolveId = plugin.resolveId as (source: string, importer: string | undefined) => string | undefined
+      const resolveId = plugin.resolveId as (
+        source: string,
+        importer: string | undefined
+      ) => string | undefined
       const result = resolveId('./components/button', undefined)
 
       expect(result).toBeUndefined()
@@ -142,7 +158,10 @@ describe('nojoyPlugin', () => {
       initPlugin(plugin, root)
 
       // Initially only button resolves
-      const resolveId = plugin.resolveId as (source: string, importer: string) => string | undefined
+      const resolveId = plugin.resolveId as (
+        source: string,
+        importer: string
+      ) => string | undefined
       const importer = join(root, 'src', 'App.tsx')
 
       expect(resolveId('./components/button', importer)).toBeDefined()
@@ -163,7 +182,10 @@ describe('nojoyPlugin', () => {
       const plugin = nojoyPlugin()
       initPlugin(plugin, root)
 
-      const resolveId = plugin.resolveId as (source: string, importer: string) => string | undefined
+      const resolveId = plugin.resolveId as (
+        source: string,
+        importer: string
+      ) => string | undefined
       const importer = join(root, 'src', 'App.tsx')
 
       expect(resolveId('./components/button', importer)).toBeDefined()
@@ -210,7 +232,10 @@ describe('nojoyPlugin', () => {
       const plugin = nojoyPlugin()
       initPlugin(plugin, root)
 
-      const resolveId = plugin.resolveId as (source: string, importer: string) => string | undefined
+      const resolveId = plugin.resolveId as (
+        source: string,
+        importer: string
+      ) => string | undefined
       const importer = join(root, 'src', 'App.tsx')
 
       // Initially not recognized

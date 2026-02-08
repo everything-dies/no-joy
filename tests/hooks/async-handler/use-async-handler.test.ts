@@ -24,9 +24,7 @@ const mockDataPlane: DataPlane = {
 describe('useAsyncHandler', () => {
   it('returns a callable with initial idle state', () => {
     const factory = () => () => Promise.resolve('ok')
-    const { result } = renderHook(() =>
-      useAsyncHandler(factory, mockDataPlane)
-    )
+    const { result } = renderHook(() => useAsyncHandler(factory, mockDataPlane))
 
     expect(typeof result.current).toBe('function')
     expect(result.current.loading).toBe(false)

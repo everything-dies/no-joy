@@ -29,7 +29,11 @@ const CONCERN_FILES = new Set(['async', 'placeholder', 'error'])
 const VIEW_EXTENSIONS = ['.tsx', '.jsx']
 const ENTRY_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx']
 
-function findFile(dir: string, baseName: string, extensions: string[]): string | undefined {
+function findFile(
+  dir: string,
+  baseName: string,
+  extensions: string[]
+): string | undefined {
   for (const ext of extensions) {
     const filePath = join(dir, baseName + ext)
     if (existsSync(filePath)) {
@@ -84,8 +88,12 @@ function scanServices(
       const ext = ENTRY_EXTENSIONS.find((e) => name.endsWith(e))
       if (ext && name !== 'index' + ext) {
         const baseName = name.slice(0, -ext.length)
-        const dirNamespace = relative(basePath, servicesDir).split(sep).join('/')
-        const namespace = dirNamespace ? `${dirNamespace}/${baseName}` : baseName
+        const dirNamespace = relative(basePath, servicesDir)
+          .split(sep)
+          .join('/')
+        const namespace = dirNamespace
+          ? `${dirNamespace}/${baseName}`
+          : baseName
         entries.push({ namespace, entryPath: fullPath })
       }
     }
