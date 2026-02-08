@@ -1,5 +1,14 @@
 # RFC: Lazy Loading, Suspense & ErrorBoundary
 
+> **Status: Implemented** (commit 9545b76)
+> **Last updated:** 2026-02-08
+>
+> This RFC has been fully implemented. All concern files (`placeholder.tsx`,
+> `error.tsx`, `error/index.tsx`) are detected by the scanner, lazy loading
+> is applied to all framework components, and the generated wrapper code
+> matches the shapes described below. A `broken` sandbox component
+> demonstrates ErrorBoundary in action (commit 941e9d9).
+
 ## Context
 
 Every framework-managed component should be lazy-loaded via `React.lazy()` to enable automatic code splitting. Components can optionally provide a `placeholder.tsx` for a Suspense fallback and/or an `error.tsx` (or `error/index.tsx`) for an ErrorBoundary wrapper. These new concern files also qualify a component for framework registration — a component with only `placeholder.tsx` and no `async.ts` is still a valid framework component.
@@ -173,3 +182,36 @@ export default function Placeholder() {
 2. `pnpm typecheck` — clean
 3. `pnpm build` — clean
 4. Sandbox demonstrates lazy loading with placeholder + error boundary
+
+> [IMPL NOTE] All verification criteria met at implementation time.
+> 82 tests passing, including new scanner tests for placeholder/error
+> detection and codegen tests for lazy/Suspense/ErrorBoundary output.
+> Sandbox build produces code-split chunks (one JS file per lazy
+> component view), confirming lazy loading works end-to-end.
+
+## Implementation details
+
+The following were added during implementation:
+
+### Test fixtures (`tests/plugin/fixtures/basic/components/`)
+
+- `with-placeholder/` — index.tsx + placeholder.tsx
+- `with-error/` — index.tsx + error.tsx
+- `with-error-dir/` — index.tsx + error/index.tsx (directory pattern)
+- `full/` — index.tsx + async.ts + placeholder.tsx + error.tsx
+
+### Scanner changes (`src/plugin/scanner.ts`)
+
+`CONCERN_FILES` expanded to `['async', 'placeholder', 'error']`. The
+scanner also checks subdirectory patterns — if `error.tsx` is not found,
+it looks for `error/index.tsx` (or `.ts`, `.jsx`, `.js`).
+
+### Sandbox broken component (`sandbox/src/components/broken/`)
+
+An intentionally broken component that throws on render to demonstrate
+ErrorBoundary containment. Other components continue rendering normally.
+
+### Dependencies
+
+- `react-error-boundary` added as dependency
+- Added to `tsup.config.ts` externals

@@ -1,5 +1,12 @@
 # Framework Mental Model
 
+> **Status: Living Document**
+> **Last updated:** 2026-02-08
+>
+> This document describes the conceptual model of nojoy. It was written
+> early in the project and remains accurate as a mental model. Inline
+> `[STATUS]` tags note which concern types are implemented vs planned.
+
 ## The core idea
 
 A React component is not a file. It's a **folder**. Each file in the
@@ -8,12 +15,14 @@ the framework composes into a working component at compile time.
 
 ```
 components/widgets/button/
-  index.tsx       → view
-  async.ts        → async handlers
-  style.ts        → styles
-  i18n.ts         → translations
-  route.ts        → routing / ACL
-  ...             → any future concern
+  index.tsx           → view               [IMPLEMENTED]
+  async.ts            → async handlers     [IMPLEMENTED]
+  placeholder.tsx     → Suspense fallback  [IMPLEMENTED]
+  error.tsx           → ErrorBoundary      [IMPLEMENTED]
+  style.ts            → styles             [PLANNED]
+  i18n.ts             → translations       [PLANNED]
+  route.ts            → routing / ACL      [PLANNED]
+  ...                 → any future concern
 ```
 
 The view (`index.tsx`) is pure. It receives everything as props. It
@@ -176,7 +185,7 @@ This is the framework's extension point. Adding a new concern type
 means defining a new file convention and its associated injection +
 wrapping behavior. The view and other layers don't change.
 
-### async.ts
+### async.ts [IMPLEMENTED]
 
 **Convention:** Each named export is an async handler.
 
@@ -190,10 +199,44 @@ The same data plane as services. The inner function is what gets called.
   `.reason`, `.retry()`, etc.
 - `handler.data` — the resolved value if the last call succeeded
 - `handler.status` — 'idle' | 'loading' | 'success' | 'error'
+- `handler.abort` — cancel pending operation
 
 **Output:** Each export name becomes a prop on the view.
 
-### style.ts (future)
+### placeholder.tsx [IMPLEMENTED]
+
+**Convention:** Default export is a React component with no props.
+
+**Input:** None — the component receives no props from the framework.
+
+**Wrapping:** When present, the framework wraps the view with
+`<Suspense fallback={<Placeholder />}>`. Combined with `React.lazy()`
+(applied to ALL framework components), this enables loading states
+during code splitting.
+
+**Output:** No props contributed to the view. The placeholder is used
+as the Suspense fallback, not passed as a prop.
+
+### error.tsx (or error/index.tsx) [IMPLEMENTED]
+
+**Convention:** Default export is a React component receiving
+`{ error: Error, resetErrorBoundary: () => void }` props (the
+`react-error-boundary` `FallbackProps` contract).
+
+**Input:** Error object and reset callback from `react-error-boundary`.
+
+**Wrapping:** When present, the framework wraps the view (and Suspense
+if present) with `<ErrorBoundary FallbackComponent={ErrorFallback}>`.
+This catches both lazy-load failures and render errors.
+
+**Output:** No props contributed to the view. The error component is
+used as the ErrorBoundary fallback.
+
+**Subdirectory pattern:** The scanner also checks for `error/index.tsx`
+(or `.ts`, `.jsx`, `.js`) to support more complex error fallback
+components that need multiple files.
+
+### style.ts [PLANNED]
 
 **Convention:** Default export or named exports for style resolution.
 
@@ -203,7 +246,7 @@ The same data plane as services. The inner function is what gets called.
 
 **Output:** `className`, `style`, or named style props.
 
-### i18n.ts (future)
+### i18n.ts [PLANNED]
 
 **Convention:** Named exports map to translation keys or functions.
 
@@ -213,7 +256,7 @@ The same data plane as services. The inner function is what gets called.
 
 **Output:** Each export name becomes a string prop on the view.
 
-### route.ts (future)
+### route.ts [PLANNED]
 
 **Convention:** Exports define routing constraints and access control.
 

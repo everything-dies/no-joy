@@ -1,5 +1,13 @@
 # Foundations RFC — Core Runtime + Vite Plugin
 
+> **Status: Implemented** (commits 5ef99fc → 9e95951)
+> **Last updated:** 2026-02-08
+>
+> This RFC has been fully implemented. Notes on deviations and evolution
+> are marked inline with `[IMPL NOTE]` tags. The document is preserved
+> as-is for historical context — it captures the original design intent
+> and open questions that guided the implementation.
+
 ## Goal
 
 Build the minimum machinery that makes one path work end-to-end:
@@ -14,6 +22,12 @@ view — with zero manual configuration.
 
 Everything else (reactive graph, type generation, HMR, additional
 concern types) layers on top of this foundation.
+
+> [IMPL NOTE] The foundation layer is complete and working. Lazy loading
+> (`React.lazy`), Suspense (`placeholder.tsx`), and ErrorBoundary
+> (`error.tsx`) concern types were added on top of this foundation as a
+> second phase. Dev-time rescan was also implemented to remove the
+> restart-on-change friction.
 
 ---
 
@@ -32,13 +46,17 @@ concern types) layers on top of this foundation.
 
 ### Out (deferred)
 
-- Control plane (`when`, `invalidate`, `poll`, `optimistic`, `cache`)
+- Control plane (`when`, `invalidate`, `poll`, `optimistic`, `cache`) — see [SERVICES_RFC.md](./SERVICES_RFC.md)
 - Type generation (`.nojoy/core.d.ts`)
 - HMR for services and concern files
 - Additional concern types (`style.ts`, `i18n.ts`, `route.ts`)
 - Cycle detection and dependency graph analysis
 - Build-time static analysis of `when()` calls
 - Namespace-level targeting
+
+> [IMPL NOTE] Two items originally deferred were implemented during Phase 1:
+> - `placeholder.tsx` and `error.tsx` concern types — see [LAZY_LOADING_RFC.md](./LAZY_LOADING_RFC.md)
+> - Dev-time rescan via chokidar watcher — see [DEV_RESCAN_RFC.md](./DEV_RESCAN_RFC.md)
 
 ---
 
@@ -149,6 +167,21 @@ export default function NojoyButton(props) {
   })
 }
 ```
+
+> [IMPL NOTE] The actual implementation deviates from this conceptual
+> example in several ways:
+> 1. **AST-based codegen** — uses `@babel/types` + `@babel/generator`
+>    instead of string templates, producing valid JS AST.
+> 2. **Random hash prefix** — all framework-internal identifiers use a
+>    per-build random prefix (`_<8alphanum>$`) to avoid naming collisions.
+>    E.g., `_x7kQ9mPa$createElement`, `_x7kQ9mPa$props`, etc.
+> 3. **Import aliases** — `createElement as _x$createElement`,
+>    `useNojoy as _x$useNojoy`, etc. User-authored names (async factory
+>    exports like `click`) remain unprefixed.
+> 4. **Lazy loading** — ALL framework components use `React.lazy()` for
+>    automatic code splitting. View is never statically imported.
+> 5. **Suspense/ErrorBoundary wrapping** — conditional based on concern
+>    files. Wrapping order: ErrorBoundary > Suspense > View.
 
 `useAsyncHandler` is a runtime helper that:
 1. Calls the outer function (factory) with the data plane — memoized
@@ -435,6 +468,8 @@ demonstrate the working framework.
 
 ## Open questions
 
+> [IMPL NOTE] Resolution status for each open question is noted below.
+
 ### 1. Provider auto-generation
 
 Should the plugin generate the `NojoyProvider` setup automatically
@@ -445,6 +480,11 @@ Manual wiring is explicit and debuggable.
 **Recommendation:** Manual for Phase 1. Auto-generate `createClients`
 and `createServices` factories, but let the developer place the
 provider. Revisit when the framework matures.
+
+> [RESOLVED] Manual wiring was chosen. `createClients()` and
+> `createServices()` are runtime factory functions. Developer places
+> `<NojoyProvider>` in their app root. See `sandbox/src/setup.ts` and
+> `sandbox/src/App.tsx` for the working pattern.
 
 ### 2. Component identification
 
@@ -458,6 +498,12 @@ folder that happens to have an `index.tsx`? Options:
 **Recommendation:** Option 1 for Phase 1. The `components/` directory
 is the convention boundary. Files outside it are not framework-managed.
 
+> [RESOLVED] Option 1 was chosen with an extension: a component is
+> framework-managed only if it has at least one concern file (`async.ts`,
+> `placeholder.tsx`, or `error.tsx`/`error/index.tsx`). Plain components
+> under `components/` with only `index.tsx` pass through without
+> interception.
+
 ### 3. View prop merging conflicts
 
 When two concern layers produce the same prop name, the framework model
@@ -466,6 +512,10 @@ says that's a build-time error. Should Phase 1 implement this check?
 **Recommendation:** Yes, it's cheap and prevents hard-to-debug issues.
 The plugin knows all concern exports at scan time — checking for
 duplicate prop names across layers is a set intersection.
+
+> [OPEN] Not yet implemented. Currently only `async.ts` contributes
+> props. When additional concern types (`style.ts`, `i18n.ts`) are added,
+> prop conflict detection should be implemented as a build-time check.
 
 ### 4. Async handler return values
 
@@ -484,6 +534,10 @@ const handleSubmit = async () => {
 observability wrapper tracks state regardless. The consumer can ignore
 the return value (fire-and-forget) or await it (sequential flows).
 
+> [OPEN] Not yet implemented. `useAsyncHandler` currently returns void
+> from the callable. Returning the promise is a backward-compatible
+> addition for a future iteration.
+
 ### 5. Multiple entry points vs monorepo
 
 The framework currently ships as one package (`nojoy`) with subpath
@@ -493,6 +547,10 @@ exports. Should `nojoy/runtime` and the plugin be separate packages?
 Split only if the dependency graphs diverge significantly (e.g.,
 runtime needs React, plugin needs Vite — but both are already peer
 deps).
+
+> [RESOLVED] Single package with subpath exports. `nojoy` (plugin) and
+> `nojoy/runtime` (React runtime) are separate entry points built via
+> `tsup` with two entries: `src/index.ts` and `src/runtime.ts`.
 
 ### 6. How deep does the service tree go?
 
@@ -511,3 +569,8 @@ or `services.market.*` with the file being an organizational choice?
 creates a namespace. A named file creates a namespace matching the
 filename. `services/market/live.ts` → `services.market.live.*`.
 This matches how the existing RFC describes nested services.
+
+> [RESOLVED] The current implementation uses `index.ts` per folder.
+> Named files within service folders are not yet supported — only
+> `index.ts` (or `.tsx`, `.js`, `.jsx`) at the folder level.
+> `services/users/index.ts` → `services.users.*`.

@@ -1,5 +1,33 @@
 # Services RFC — Reactive Service Graph
 
+> **Status: Partially Implemented / Future Work**
+> **Last updated:** 2026-02-08
+>
+> The **data plane** (first parameter: `{ clients, services }`) is
+> implemented and working in Phase 1. Services are two-layer functions,
+> the outer receives the data plane, and the inner is the callable method.
+>
+> The **control plane** (second parameter: `{ when, invalidate, ... }`)
+> is entirely future work. None of the reactive wiring, caching,
+> polling, optimistic updates, or namespace-level targeting is
+> implemented yet. This RFC remains the design reference for that work.
+>
+> **What's implemented now:**
+> - `createServices({ clients })` — runtime factory that calls outer
+>   functions with `{ clients, services }` and stores inner functions
+> - `createClients()` — runtime factory that calls client factory functions
+> - Service methods are callable via `services.namespace.method()`
+> - Services can call other services via the `services` reference in
+>   execution scope
+>
+> **What's NOT implemented:**
+> - Control plane (`when`, `invalidate`, `emit`, `optimistic`, `poll`, `cache`)
+> - Type generation for services
+> - Cycle detection
+> - Namespace-level targeting
+> - Declaration scope vs execution scope distinction (currently services
+>   only have execution scope)
+
 ## The shape
 
 Every service method is a two-layer function:

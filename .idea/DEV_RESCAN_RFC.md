@@ -2,7 +2,7 @@
 
 Date: 2026-02-08
 Author: Codex
-Status: Draft
+Status: **Implemented** (commit 9e95951)
 
 ## Summary
 Introduce dev-time filesystem rescan and module invalidation so adding, removing, or renaming files under `src/components`, `src/services`, or `src/clients` is picked up without restarting Vite. This removes the most visible workflow friction and aligns with the RFC expectation of a filesystem-driven framework.
@@ -78,3 +78,36 @@ Switch `generatePrefix()` from random to deterministic hashing by component path
 
 ## Decision
 If approved, implement dev-time rescan + invalidation first. Then evaluate deterministic prefix change as a follow-up.
+
+## Implementation Notes (2026-02-08)
+
+This RFC was implemented using the `configureServer` hook approach with chokidar.
+
+### Implementation choices
+
+| RFC proposal | Actual implementation |
+|---|---|
+| `handleHotUpdate` or chokidar | **chokidar** via `configureServer` hook — more control over watched directories |
+| Rescan trigger | `add`, `unlink`, `addDir`, `unlinkDir` events on `src/{components,services,clients}` |
+| Debounce strategy | 100ms debounce via `setTimeout` — collapses rapid file system events |
+| Invalidation scope | Invalidate both previous and current virtual modules, then `full-reload` if registry changed |
+| Deterministic prefix | **Not adopted** — random prefix per build was kept. The nondeterminism is acceptable because prefix is per-build, not per-file. |
+
+### Key implementation details
+
+- Watcher ignores initial scan (`ignoreInitial: true`) — initial scan happens in `configResolved`
+- Change detection compares previous vs current `componentMap` key sets
+- Full reload only triggers when the set of framework-managed components changes (add/remove), not on every file change
+- Watcher cleanup on `server.httpServer.close` to prevent resource leaks
+
+### Tests added
+
+`tests/plugin/vite-plugin.test.ts` (10 tests):
+- Initial scan, resolveId resolution, load code generation
+- Rescan: new component pickup, removed concern file, new concern on existing component, promotion from plain to framework-managed
+
+### Risks from RFC — status
+
+- **Over-invalidation** — mitigated by only triggering full-reload when registry set changes
+- **Infinite loops** — not applicable; no generated files in watched directories
+- **Platform-dependent events** — mitigated with 100ms debounce
