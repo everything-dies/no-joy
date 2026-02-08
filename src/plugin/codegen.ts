@@ -18,9 +18,19 @@ function buildDisplayName(name: string): string {
     .join('')
 }
 
-const PREFIX = '__nojoy$'
+const HASH_LENGTH = 8
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+export function generatePrefix(): string {
+  let hash = ''
+  for (let i = 0; i < HASH_LENGTH; i++) {
+    hash += ALPHABET[Math.floor(Math.random() * ALPHABET.length)]
+  }
+  return `_${hash}$`
+}
 
 function buildImports(
+  prefix: string,
   viewPath: string,
   asyncConcernPath: string | undefined,
   asyncExports: string[]
@@ -30,7 +40,7 @@ function buildImports(
   // import { createElement as __nojoy$createElement } from 'react'
   imports.push(
     t.importDeclaration(
-      [t.importSpecifier(t.identifier(`${PREFIX}createElement`), t.identifier('createElement'))],
+      [t.importSpecifier(t.identifier(`${prefix}createElement`), t.identifier('createElement'))],
       t.stringLiteral('react')
     )
   )
@@ -38,7 +48,7 @@ function buildImports(
   // import { useNojoy as __nojoy$useNojoy } from 'nojoy/runtime'
   imports.push(
     t.importDeclaration(
-      [t.importSpecifier(t.identifier(`${PREFIX}useNojoy`), t.identifier('useNojoy'))],
+      [t.importSpecifier(t.identifier(`${prefix}useNojoy`), t.identifier('useNojoy'))],
       t.stringLiteral('nojoy/runtime')
     )
   )
@@ -47,7 +57,7 @@ function buildImports(
   if (asyncExports.length > 0) {
     imports.push(
       t.importDeclaration(
-        [t.importSpecifier(t.identifier(`${PREFIX}useAsyncHandler`), t.identifier('useAsyncHandler'))],
+        [t.importSpecifier(t.identifier(`${prefix}useAsyncHandler`), t.identifier('useAsyncHandler'))],
         t.stringLiteral('nojoy/runtime')
       )
     )
@@ -56,7 +66,7 @@ function buildImports(
   // import __nojoy$View from '<viewPath>'
   imports.push(
     t.importDeclaration(
-      [t.importDefaultSpecifier(t.identifier(`${PREFIX}View`))],
+      [t.importDefaultSpecifier(t.identifier(`${prefix}View`))],
       t.stringLiteral(viewPath)
     )
   )
@@ -77,6 +87,7 @@ function buildImports(
 }
 
 function buildComponentFunction(
+  prefix: string,
   displayName: string,
   asyncExports: string[]
 ): t.FunctionDeclaration {
@@ -86,8 +97,8 @@ function buildComponentFunction(
   body.push(
     t.variableDeclaration('const', [
       t.variableDeclarator(
-        t.identifier(`${PREFIX}dataPlane`),
-        t.callExpression(t.identifier(`${PREFIX}useNojoy`), [])
+        t.identifier(`${prefix}dataPlane`),
+        t.callExpression(t.identifier(`${prefix}useNojoy`), [])
       ),
     ])
   )
@@ -97,10 +108,10 @@ function buildComponentFunction(
     body.push(
       t.variableDeclaration('const', [
         t.variableDeclarator(
-          t.identifier(`${PREFIX}${name}`),
-          t.callExpression(t.identifier(`${PREFIX}useAsyncHandler`), [
+          t.identifier(`${prefix}${name}`),
+          t.callExpression(t.identifier(`${prefix}useAsyncHandler`), [
             t.identifier(name),
-            t.identifier(`${PREFIX}dataPlane`),
+            t.identifier(`${prefix}dataPlane`),
           ])
         ),
       ])
@@ -111,20 +122,20 @@ function buildComponentFunction(
   const propsArg =
     asyncExports.length > 0
       ? t.objectExpression([
-          t.spreadElement(t.identifier(`${PREFIX}props`)),
+          t.spreadElement(t.identifier(`${prefix}props`)),
           ...asyncExports.map((name) =>
             t.objectProperty(
               t.identifier(name),
-              t.identifier(`${PREFIX}${name}`)
+              t.identifier(`${prefix}${name}`)
             )
           ),
         ])
-      : t.identifier(`${PREFIX}props`)
+      : t.identifier(`${prefix}props`)
 
   body.push(
     t.returnStatement(
-      t.callExpression(t.identifier(`${PREFIX}createElement`), [
-        t.identifier(`${PREFIX}View`),
+      t.callExpression(t.identifier(`${prefix}createElement`), [
+        t.identifier(`${prefix}View`),
         propsArg,
       ])
     )
@@ -132,25 +143,26 @@ function buildComponentFunction(
 
   const fn = t.functionDeclaration(
     t.identifier(`Nojoy${displayName}`),
-    [t.identifier(`${PREFIX}props`)],
+    [t.identifier(`${prefix}props`)],
     t.blockStatement(body)
   )
 
   return fn
 }
 
-export function generateComponentWrapper(component: ComponentEntry): string {
+export function generateComponentWrapper(component: ComponentEntry, prefix: string): string {
   const asyncConcern = component.concerns['async']
   const asyncExports = asyncConcern ? extractExportNames(asyncConcern) : []
   const displayName = buildDisplayName(component.name)
 
   const imports = buildImports(
+    prefix,
     component.viewPath,
     asyncConcern,
     asyncExports
   )
 
-  const componentFn = buildComponentFunction(displayName, asyncExports)
+  const componentFn = buildComponentFunction(prefix, displayName, asyncExports)
 
   // Nojoy<Name>.displayName = '<Name>'
   const displayNameAssignment = t.expressionStatement(

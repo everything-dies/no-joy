@@ -1,11 +1,25 @@
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { generateComponentWrapper } from '../../src/plugin/codegen'
+import { generateComponentWrapper, generatePrefix } from '../../src/plugin/codegen'
 
 import type { ComponentEntry } from '../../src/plugin/scanner'
 
 const FIXTURES = resolve(__dirname, 'fixtures/basic')
+const PREFIX = '_t3stpr3f$'
+
+describe('generatePrefix', () => {
+  it('returns a string matching _<8 alphanumeric chars>$', () => {
+    const prefix = generatePrefix()
+    expect(prefix).toMatch(/^_[a-z0-9]{8}\$$/)
+  })
+
+  it('generates unique values across calls', () => {
+    const a = generatePrefix()
+    const b = generatePrefix()
+    expect(a).not.toBe(b)
+  })
+})
 
 describe('generateComponentWrapper', () => {
   it('generates wrapper with prefixed framework imports', () => {
@@ -18,18 +32,18 @@ describe('generateComponentWrapper', () => {
       },
     }
 
-    const code = generateComponentWrapper(component)
+    const code = generateComponentWrapper(component, PREFIX)
 
     expect(code).toContain(
-      'import { createElement as __nojoy$createElement } from "react"'
+      `import { createElement as ${PREFIX}createElement } from "react"`
     )
     expect(code).toContain(
-      'import { useNojoy as __nojoy$useNojoy } from "nojoy/runtime"'
+      `import { useNojoy as ${PREFIX}useNojoy } from "nojoy/runtime"`
     )
     expect(code).toContain(
-      'import { useAsyncHandler as __nojoy$useAsyncHandler } from "nojoy/runtime"'
+      `import { useAsyncHandler as ${PREFIX}useAsyncHandler } from "nojoy/runtime"`
     )
-    expect(code).toContain(`import __nojoy$View from "${component.viewPath}"`)
+    expect(code).toContain(`import ${PREFIX}View from "${component.viewPath}"`)
     // async factory imports stay unprefixed (user-authored)
     expect(code).toContain(
       `import { click } from "${component.concerns['async']}"`
@@ -46,16 +60,16 @@ describe('generateComponentWrapper', () => {
       },
     }
 
-    const code = generateComponentWrapper(component)
+    const code = generateComponentWrapper(component, PREFIX)
 
     expect(code).toContain(
-      'const __nojoy$dataPlane = __nojoy$useNojoy()'
+      `const ${PREFIX}dataPlane = ${PREFIX}useNojoy()`
     )
     expect(code).toContain(
-      'const __nojoy$click = __nojoy$useAsyncHandler(click, __nojoy$dataPlane)'
+      `const ${PREFIX}click = ${PREFIX}useAsyncHandler(click, ${PREFIX}dataPlane)`
     )
     // prop key stays unprefixed, value is prefixed
-    expect(code).toContain('click: __nojoy$click')
+    expect(code).toContain(`click: ${PREFIX}click`)
   })
 
   it('generates correct displayName', () => {
@@ -68,9 +82,9 @@ describe('generateComponentWrapper', () => {
       },
     }
 
-    const code = generateComponentWrapper(component)
+    const code = generateComponentWrapper(component, PREFIX)
 
-    expect(code).toContain('function NojoyWidgetsCard(__nojoy$props)')
+    expect(code).toContain(`function NojoyWidgetsCard(${PREFIX}props)`)
     expect(code).toContain('NojoyWidgetsCard.displayName = "WidgetsCard"')
   })
 
@@ -82,11 +96,11 @@ describe('generateComponentWrapper', () => {
       concerns: {},
     }
 
-    const code = generateComponentWrapper(component)
+    const code = generateComponentWrapper(component, PREFIX)
 
     expect(code).not.toContain('useAsyncHandler')
     expect(code).toContain(
-      'return __nojoy$createElement(__nojoy$View, __nojoy$props)'
+      `return ${PREFIX}createElement(${PREFIX}View, ${PREFIX}props)`
     )
   })
 
@@ -100,7 +114,7 @@ describe('generateComponentWrapper', () => {
       },
     }
 
-    const code = generateComponentWrapper(component)
+    const code = generateComponentWrapper(component, PREFIX)
 
     expect(code).toContain('export default NojoyButton')
   })
@@ -115,9 +129,9 @@ describe('generateComponentWrapper', () => {
       },
     }
 
-    const code = generateComponentWrapper(component)
+    const code = generateComponentWrapper(component, PREFIX)
 
-    expect(code).toContain('function NojoyButton(__nojoy$props)')
-    expect(code).toContain('...__nojoy$props')
+    expect(code).toContain(`function NojoyButton(${PREFIX}props)`)
+    expect(code).toContain(`...${PREFIX}props`)
   })
 })

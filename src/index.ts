@@ -1,5 +1,5 @@
 export { nojoyPlugin as default, type NojoyPluginOptions } from './plugin'
-export { scan, generateComponentWrapper, extractExportNames } from './plugin'
+export { scan, generateComponentWrapper, generatePrefix, extractExportNames } from './plugin'
 export type {
   ClientEntry,
   ComponentEntry,

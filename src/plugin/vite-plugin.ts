@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 
-import { generateComponentWrapper } from './codegen'
+import { generateComponentWrapper, generatePrefix } from './codegen'
 import { scan } from './scanner'
 
 import type { ComponentEntry, ScanResult } from './scanner'
@@ -16,6 +16,7 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
   let registry: ScanResult
   let componentMap: Map<string, ComponentEntry>
   let resolvedSrcDir: string
+  let prefix: string
 
   return {
     name: 'nojoy',
@@ -27,6 +28,7 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
         : resolve(config.root, 'src')
 
       registry = scan(resolvedSrcDir)
+      prefix = generatePrefix()
 
       componentMap = new Map()
       for (const component of registry.components) {
@@ -63,7 +65,7 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
 
       if (!component) return undefined
 
-      return generateComponentWrapper(component)
+      return generateComponentWrapper(component, prefix)
     },
   }
 }

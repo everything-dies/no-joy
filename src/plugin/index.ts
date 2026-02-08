@@ -1,6 +1,6 @@
 export { nojoyPlugin, type NojoyPluginOptions } from './vite-plugin'
 export { scan } from './scanner'
-export { generateComponentWrapper } from './codegen'
+export { generateComponentWrapper, generatePrefix } from './codegen'
 export { extractExportNames } from './exports'
 export type {
   ClientEntry,
