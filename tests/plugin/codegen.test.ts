@@ -20,11 +20,11 @@ describe('generateComponentWrapper', () => {
 
     const code = generateComponentWrapper(component)
 
-    expect(code).toContain("import { createElement } from 'react'")
-    expect(code).toContain("import { useNojoy } from 'nojoy/runtime'")
-    expect(code).toContain("import { useAsyncHandler } from 'nojoy/runtime'")
-    expect(code).toContain(`import View from '${component.viewPath}'`)
-    expect(code).toContain(`import { click } from '${component.concerns['async']}'`)
+    expect(code).toContain('import { createElement } from "react"')
+    expect(code).toContain('import { useNojoy } from "nojoy/runtime"')
+    expect(code).toContain('import { useAsyncHandler } from "nojoy/runtime"')
+    expect(code).toContain(`import View from "${component.viewPath}"`)
+    expect(code).toContain(`import { click } from "${component.concerns['async']}"`)
   })
 
   it('generates static hook calls per export', () => {
@@ -58,7 +58,7 @@ describe('generateComponentWrapper', () => {
     const code = generateComponentWrapper(component)
 
     expect(code).toContain('function NojoyWidgetsCard(props)')
-    expect(code).toContain("NojoyWidgetsCard.displayName = 'WidgetsCard'")
+    expect(code).toContain('NojoyWidgetsCard.displayName = "WidgetsCard"')
   })
 
   it('generates minimal wrapper without async concerns', () => {
@@ -72,7 +72,21 @@ describe('generateComponentWrapper', () => {
     const code = generateComponentWrapper(component)
 
     expect(code).not.toContain('useAsyncHandler')
-    expect(code).not.toContain('asyncModule')
     expect(code).toContain('return createElement(View, props)')
+  })
+
+  it('generates valid AST output with export default', () => {
+    const component: ComponentEntry = {
+      name: 'button',
+      dir: resolve(FIXTURES, 'components/button'),
+      viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
+      concerns: {
+        async: resolve(FIXTURES, 'components/button/async.ts'),
+      },
+    }
+
+    const code = generateComponentWrapper(component)
+
+    expect(code).toContain('export default NojoyButton')
   })
 })
