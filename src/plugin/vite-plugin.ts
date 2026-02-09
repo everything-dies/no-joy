@@ -1,16 +1,11 @@
-import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 import { watch } from 'chokidar'
 
 import { generateComponentWrapper, generatePrefix } from './codegen'
 import { scan } from './scanner'
-import { generateComponentTypes } from './typegen'
-
 import type { ComponentEntry, ScanResult } from './scanner'
 import type { Plugin, ViteDevServer } from 'vite'
-
-const TYPES_FILENAME = '__nojoy.ts'
 
 const VIRTUAL_PREFIX = '\0nojoy:component:'
 
@@ -38,18 +33,6 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
     componentMap = buildComponentMap(registry)
   }
 
-  function writeAllComponentTypes(): void {
-    for (const component of registry.components) {
-      const content = generateComponentTypes(component)
-      const typesPath = join(component.dir, TYPES_FILENAME)
-      if (content) {
-        writeFileSync(typesPath, content)
-      } else if (existsSync(typesPath)) {
-        unlinkSync(typesPath)
-      }
-    }
-  }
-
   function invalidateVirtualModules(server: ViteDevServer): void {
     for (const dir of componentMap.keys()) {
       const id = VIRTUAL_PREFIX + dir
@@ -71,7 +54,6 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
         : resolve(config.root, 'src')
 
       rescan()
-      writeAllComponentTypes()
       prefix = generatePrefix()
     },
 
@@ -85,7 +67,6 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
       const watcher = watch(watchDirs, {
         ignoreInitial: true,
         ignorePermissionErrors: true,
-        ignored: `**/${TYPES_FILENAME}`,
       })
 
       let debounceTimer: ReturnType<typeof setTimeout> | undefined
@@ -95,7 +76,6 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
         debounceTimer = setTimeout(() => {
           const previousDirs = new Set(componentMap.keys())
           rescan()
-          writeAllComponentTypes()
           const currentDirs = new Set(componentMap.keys())
 
           // Invalidate removed components
