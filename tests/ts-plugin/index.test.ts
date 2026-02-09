@@ -1,7 +1,9 @@
-import { resolve } from 'node:path'
+import { mkdtempSync, rmSync, writeFileSync, unlinkSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 
 import ts from 'typescript'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // Load the plugin factory
 import pluginFactory from '../../src/ts-plugin/index'
@@ -119,5 +121,126 @@ describe('nojoy ts-plugin', () => {
 
     expect(text).toContain("import('nojoy/runtime').AsyncHandler<")
     expect(text).toContain("i18n: ReturnType<typeof import('./i18n').default>")
+  })
+})
+
+describe('nojoy ts-plugin reactivity', () => {
+  const plugin = pluginFactory({ typescript: ts })
+  let tempDir: string
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'nojoy-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true })
+  })
+
+  it('injects types when concern file is added after plugin init', () => {
+    const viewPath = join(tempDir, 'index.tsx')
+    const viewContent =
+      'export default ({ click }) => <button onClick={click}>Go</button>\n'
+    writeFileSync(viewPath, viewContent)
+
+    const info = createMockInfo()
+    info.files.set(viewPath, viewContent)
+    plugin.create(info as unknown as ts.server.PluginCreateInfo)
+
+    // Before: no concern file — no injection
+    const snapshotBefore =
+      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const textBefore = snapshotBefore!.getText(0, snapshotBefore!.getLength())
+    expect(textBefore).toBe(viewContent)
+
+    // Add async.ts concern file
+    writeFileSync(
+      join(tempDir, 'async.ts'),
+      'export const click = () => () => Promise.resolve()\n'
+    )
+
+    // After: concern exists — injection happens
+    const snapshotAfter =
+      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const textAfter = snapshotAfter!.getText(0, snapshotAfter!.getLength())
+    expect(textAfter).toContain("import('nojoy/runtime').AsyncHandler<")
+  })
+
+  it('removes injected types when concern file is deleted', () => {
+    const viewPath = join(tempDir, 'index.tsx')
+    const asyncPath = join(tempDir, 'async.ts')
+    const viewContent =
+      'export default ({ click }) => <button onClick={click}>Go</button>\n'
+    writeFileSync(viewPath, viewContent)
+    writeFileSync(asyncPath, 'export const click = () => () => Promise.resolve()\n')
+
+    const info = createMockInfo()
+    info.files.set(viewPath, viewContent)
+    plugin.create(info as unknown as ts.server.PluginCreateInfo)
+
+    // Before: concern exists — injection happens
+    const snapshotBefore =
+      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const textBefore = snapshotBefore!.getText(0, snapshotBefore!.getLength())
+    expect(textBefore).toContain("import('nojoy/runtime').AsyncHandler<")
+
+    // Remove concern file
+    unlinkSync(asyncPath)
+
+    // After: no concern — injection removed
+    const snapshotAfter =
+      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const textAfter = snapshotAfter!.getText(0, snapshotAfter!.getLength())
+    expect(textAfter).toBe(viewContent)
+  })
+
+  it('version changes when concern file is added', () => {
+    const viewPath = join(tempDir, 'index.tsx')
+    writeFileSync(viewPath, 'export default ({ click }) => <button>Go</button>\n')
+
+    const info = createMockInfo()
+    info.files.set(
+      viewPath,
+      'export default ({ click }) => <button>Go</button>\n'
+    )
+    plugin.create(info as unknown as ts.server.PluginCreateInfo)
+
+    const versionBefore =
+      info.languageServiceHost.getScriptVersion!(viewPath)
+
+    // Add concern file
+    writeFileSync(
+      join(tempDir, 'async.ts'),
+      'export const click = () => () => Promise.resolve()\n'
+    )
+
+    const versionAfter =
+      info.languageServiceHost.getScriptVersion!(viewPath)
+
+    expect(versionAfter).not.toBe(versionBefore)
+  })
+
+  it('version changes when concern file is removed', () => {
+    const viewPath = join(tempDir, 'index.tsx')
+    const asyncPath = join(tempDir, 'async.ts')
+    writeFileSync(viewPath, 'export default ({ click }) => <button>Go</button>\n')
+    writeFileSync(asyncPath, 'export const click = () => () => Promise.resolve()\n')
+
+    const info = createMockInfo()
+    info.files.set(
+      viewPath,
+      'export default ({ click }) => <button>Go</button>\n'
+    )
+    plugin.create(info as unknown as ts.server.PluginCreateInfo)
+
+    const versionBefore =
+      info.languageServiceHost.getScriptVersion!(viewPath)
+
+    // Remove concern file
+    unlinkSync(asyncPath)
+
+    const versionAfter =
+      info.languageServiceHost.getScriptVersion!(viewPath)
+
+    expect(versionAfter).not.toBe(versionBefore)
   })
 })

@@ -60,7 +60,7 @@ host.getSourceFile = (
   )
 
   if (!sourceFile) return sourceFile
-  if (!injector.isComponentView(fileName)) return sourceFile
+  if (!injector.isViewFile(fileName)) return sourceFile
 
   const augmented = injector.injectTypes(fileName, sourceFile.text)
   if (augmented === sourceFile.text) return sourceFile

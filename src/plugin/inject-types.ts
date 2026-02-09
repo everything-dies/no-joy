@@ -6,6 +6,7 @@ const ENTRY_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx']
 const VIEW_BASENAMES = new Set(['index.tsx', 'index.jsx'])
 
 export interface TypeInjector {
+  isViewFile(fileName: string): boolean
   isComponentView(fileName: string): boolean
   findConcern(dir: string, name: string): string | undefined
   buildTypeAnnotation(dir: string): string | undefined
@@ -30,6 +31,12 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
       if (fileExists(path)) return path
     }
     return undefined
+  }
+
+  function isViewFile(fileName: string): boolean {
+    if (fileName.includes('node_modules')) return false
+    const base = fileName.replace(/\\/g, '/').split('/').pop()
+    return !!base && VIEW_BASENAMES.has(base)
   }
 
   function isComponentView(fileName: string): boolean {
@@ -176,6 +183,7 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
   }
 
   return {
+    isViewFile,
     isComponentView,
     findConcern,
     buildTypeAnnotation,

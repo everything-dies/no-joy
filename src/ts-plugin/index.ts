@@ -24,7 +24,7 @@ function init(modules: { typescript: typeof ts }) {
     ): ts.IScriptSnapshot | undefined => {
       const snapshot = originalGetScriptSnapshot(fileName)
       if (!snapshot) return snapshot
-      if (!injector.isComponentView(fileName)) return snapshot
+      if (!injector.isViewFile(fileName)) return snapshot
 
       const text = snapshot.getText(0, snapshot.getLength())
       const augmented = injector.injectTypes(fileName, text)
@@ -45,14 +45,14 @@ function init(modules: { typescript: typeof ts }) {
         fileName: string
       ): string => {
         const version = originalGetScriptVersion(fileName)
-        if (!injector.isComponentView(fileName)) return version
+        if (!injector.isViewFile(fileName)) return version
 
         const dir = dirname(fileName)
         const parts = [version]
         const asyncPath = injector.findConcern(dir, 'async')
         const i18nPath = injector.findConcern(dir, 'i18n')
-        if (asyncPath) parts.push(originalGetScriptVersion(asyncPath))
-        if (i18nPath) parts.push(originalGetScriptVersion(i18nPath))
+        parts.push(asyncPath ? originalGetScriptVersion(asyncPath) : '')
+        parts.push(i18nPath ? originalGetScriptVersion(i18nPath) : '')
         return parts.join(':')
       }
     }
