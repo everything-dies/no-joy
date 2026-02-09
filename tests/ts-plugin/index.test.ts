@@ -147,8 +147,7 @@ describe('nojoy ts-plugin reactivity', () => {
     plugin.create(info as unknown as ts.server.PluginCreateInfo)
 
     // Before: no concern file — no injection
-    const snapshotBefore =
-      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const snapshotBefore = info.languageServiceHost.getScriptSnapshot!(viewPath)
     const textBefore = snapshotBefore!.getText(0, snapshotBefore!.getLength())
     expect(textBefore).toBe(viewContent)
 
@@ -159,8 +158,7 @@ describe('nojoy ts-plugin reactivity', () => {
     )
 
     // After: concern exists — injection happens
-    const snapshotAfter =
-      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const snapshotAfter = info.languageServiceHost.getScriptSnapshot!(viewPath)
     const textAfter = snapshotAfter!.getText(0, snapshotAfter!.getLength())
     expect(textAfter).toContain("import('nojoy/runtime').AsyncHandler<")
   })
@@ -171,15 +169,17 @@ describe('nojoy ts-plugin reactivity', () => {
     const viewContent =
       'export default ({ click }) => <button onClick={click}>Go</button>\n'
     writeFileSync(viewPath, viewContent)
-    writeFileSync(asyncPath, 'export const click = () => () => Promise.resolve()\n')
+    writeFileSync(
+      asyncPath,
+      'export const click = () => () => Promise.resolve()\n'
+    )
 
     const info = createMockInfo()
     info.files.set(viewPath, viewContent)
     plugin.create(info as unknown as ts.server.PluginCreateInfo)
 
     // Before: concern exists — injection happens
-    const snapshotBefore =
-      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const snapshotBefore = info.languageServiceHost.getScriptSnapshot!(viewPath)
     const textBefore = snapshotBefore!.getText(0, snapshotBefore!.getLength())
     expect(textBefore).toContain("import('nojoy/runtime').AsyncHandler<")
 
@@ -187,15 +187,17 @@ describe('nojoy ts-plugin reactivity', () => {
     unlinkSync(asyncPath)
 
     // After: no concern — injection removed
-    const snapshotAfter =
-      info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const snapshotAfter = info.languageServiceHost.getScriptSnapshot!(viewPath)
     const textAfter = snapshotAfter!.getText(0, snapshotAfter!.getLength())
     expect(textAfter).toBe(viewContent)
   })
 
   it('version changes when concern file is added', () => {
     const viewPath = join(tempDir, 'index.tsx')
-    writeFileSync(viewPath, 'export default ({ click }) => <button>Go</button>\n')
+    writeFileSync(
+      viewPath,
+      'export default ({ click }) => <button>Go</button>\n'
+    )
 
     const info = createMockInfo()
     info.files.set(
@@ -204,8 +206,7 @@ describe('nojoy ts-plugin reactivity', () => {
     )
     plugin.create(info as unknown as ts.server.PluginCreateInfo)
 
-    const versionBefore =
-      info.languageServiceHost.getScriptVersion!(viewPath)
+    const versionBefore = info.languageServiceHost.getScriptVersion!(viewPath)
 
     // Add concern file
     writeFileSync(
@@ -213,8 +214,7 @@ describe('nojoy ts-plugin reactivity', () => {
       'export const click = () => () => Promise.resolve()\n'
     )
 
-    const versionAfter =
-      info.languageServiceHost.getScriptVersion!(viewPath)
+    const versionAfter = info.languageServiceHost.getScriptVersion!(viewPath)
 
     expect(versionAfter).not.toBe(versionBefore)
   })
@@ -222,8 +222,14 @@ describe('nojoy ts-plugin reactivity', () => {
   it('version changes when concern file is removed', () => {
     const viewPath = join(tempDir, 'index.tsx')
     const asyncPath = join(tempDir, 'async.ts')
-    writeFileSync(viewPath, 'export default ({ click }) => <button>Go</button>\n')
-    writeFileSync(asyncPath, 'export const click = () => () => Promise.resolve()\n')
+    writeFileSync(
+      viewPath,
+      'export default ({ click }) => <button>Go</button>\n'
+    )
+    writeFileSync(
+      asyncPath,
+      'export const click = () => () => Promise.resolve()\n'
+    )
 
     const info = createMockInfo()
     info.files.set(
@@ -232,14 +238,12 @@ describe('nojoy ts-plugin reactivity', () => {
     )
     plugin.create(info as unknown as ts.server.PluginCreateInfo)
 
-    const versionBefore =
-      info.languageServiceHost.getScriptVersion!(viewPath)
+    const versionBefore = info.languageServiceHost.getScriptVersion!(viewPath)
 
     // Remove concern file
     unlinkSync(asyncPath)
 
-    const versionAfter =
-      info.languageServiceHost.getScriptVersion!(viewPath)
+    const versionAfter = info.languageServiceHost.getScriptVersion!(viewPath)
 
     expect(versionAfter).not.toBe(versionBefore)
   })

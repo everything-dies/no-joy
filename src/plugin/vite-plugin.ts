@@ -4,6 +4,7 @@ import { watch } from 'chokidar'
 
 import { generateComponentWrapper, generatePrefix } from './codegen'
 import { scan } from './scanner'
+
 import type { ComponentEntry, ScanResult } from './scanner'
 import type { Plugin, ViteDevServer } from 'vite'
 
