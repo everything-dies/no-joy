@@ -5,6 +5,7 @@ import { defineConfig } from 'vite'
 import { nojoyPlugin } from '../src/plugin/vite-plugin'
 
 export default defineConfig({
+  base: '/no-joy/',
   plugins: [nojoyPlugin(), react()],
   resolve: {
     alias: {
