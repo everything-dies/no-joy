@@ -141,7 +141,12 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
 
       if (!component) return undefined
 
-      return generateComponentWrapper(component, prefix, resolvedRoot)
+      return generateComponentWrapper(
+        component,
+        prefix,
+        resolvedRoot,
+        resolvedSrcDir
+      )
     },
   }
 }

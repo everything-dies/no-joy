@@ -180,24 +180,26 @@ function buildViewDeclaration(
 function buildI18nDeclarations(
   prefix: string,
   component: ComponentEntry,
-  root: string
+  root: string,
+  srcDir: string
 ): t.Statement[] {
   const statements: t.Statement[] = []
 
-  // const _x$i18nNamespace = "src/components/widgets/button"
-  const relativePath = relative(root, component.dir).split(sep).join('/')
+  // const _x$i18nNamespace = "components/widgets/button"
+  const namespace = relative(srcDir, component.dir).split(sep).join('/')
   statements.push(
     t.variableDeclaration('const', [
       t.variableDeclarator(
         t.identifier(`${prefix}i18nNamespace`),
-        t.stringLiteral(relativePath)
+        t.stringLiteral(namespace)
       ),
     ])
   )
 
   // const _x$i18nTranslations = import.meta.glob("/src/components/button/i18n/*.json")
   // Pattern must be project-root-relative (leading /) for Vite's import.meta.glob
-  const globPattern = `/${relativePath}/i18n/*.json`
+  const rootRelative = relative(root, component.dir).split(sep).join('/')
+  const globPattern = `/${rootRelative}/i18n/*.json`
   statements.push(
     t.variableDeclaration('const', [
       t.variableDeclarator(
@@ -386,7 +388,8 @@ function buildComponentFunction(
 export function generateComponentWrapper(
   component: ComponentEntry,
   prefix: string,
-  root: string
+  root: string,
+  srcDir: string = root
 ): string {
   const concerns: ConcernPaths = {
     async: component.concerns['async'],
@@ -400,7 +403,7 @@ export function generateComponentWrapper(
   const imports = buildImports(prefix, concerns, asyncExports)
   const viewDecl = buildViewDeclaration(prefix, component.viewPath)
   const i18nDecls = concerns.i18n
-    ? buildI18nDeclarations(prefix, component, root)
+    ? buildI18nDeclarations(prefix, component, root, srcDir)
     : []
   const componentStatements = buildComponentFunction(
     prefix,

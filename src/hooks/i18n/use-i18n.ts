@@ -71,7 +71,15 @@ export function useI18n<T extends NestedMessages>(
   }
 
   const resolved = useMemo(() => {
-    const localeOverrides = translationCache.get(cacheKey) ?? {}
+    const cached = translationCache.get(cacheKey) ?? {}
+    // Strip namespace prefix from loaded keys (JSON uses namespaced keys)
+    const nsPrefix = `${namespace}/`
+    const localeOverrides: Record<string, string> = {}
+    for (const [key, value] of Object.entries(cached)) {
+      localeOverrides[
+        key.startsWith(nsPrefix) ? key.slice(nsPrefix.length) : key
+      ] = value
+    }
     const merged = { ...defaults, ...localeOverrides }
 
     const formatted: Record<string, string> = {}

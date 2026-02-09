@@ -1,6 +1,6 @@
 {
-  "content": "Das ist mein Button",
-  "fallback": "Warten auf die Auflösung des Klicks...",
-  "error/title": "Etwas hat nicht funktioniert",
-  "error/actions/retry": "Erneut versuchen"
+  "components/widgets/button/content": "Das ist mein Button",
+  "components/widgets/button/fallback": "Warten auf die Auflösung des Klicks...",
+  "components/widgets/button/error/title": "Etwas hat nicht funktioniert",
+  "components/widgets/button/error/actions/retry": "Erneut versuchen"
 }
