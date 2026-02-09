@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-import { type DataPlane } from '../hooks/async-handler'
+import { type DataPlane } from '@/hooks/async-handler'
 
 const NojoyContext = createContext<DataPlane | undefined>(undefined)
 

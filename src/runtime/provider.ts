@@ -1,7 +1,7 @@
 import { createElement, useMemo, type ReactNode } from 'react'
 import { IntlProvider } from 'react-intl'
 
-import { type DataPlane } from '../hooks/async-handler'
+import { type DataPlane } from '@/hooks/async-handler'
 
 import { NojoyContext } from './context'
 

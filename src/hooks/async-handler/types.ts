@@ -1,4 +1,4 @@
-import { type LatencyStatus } from '../latency'
+import { type LatencyStatus } from '@/hooks/latency'
 
 export interface AsyncError {
   reason: unknown

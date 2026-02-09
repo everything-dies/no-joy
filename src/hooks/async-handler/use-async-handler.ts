@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react'
 
-import { useLatency } from '../latency'
+import { useLatency } from '@/hooks/latency'
 
 import { type AsyncFactory, type AsyncHandler, type DataPlane } from './types'
 

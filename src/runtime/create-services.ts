@@ -1,4 +1,4 @@
-import { type DataPlane } from '../hooks/async-handler'
+import { type DataPlane } from '@/hooks/async-handler'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ServiceEntry = (dataPlane: any) => (...args: never[]) => unknown

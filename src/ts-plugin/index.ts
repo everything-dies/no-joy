@@ -2,7 +2,7 @@ import { dirname } from 'node:path'
 
 import type ts from 'typescript'
 
-import { createTypeInjector } from '../plugin/inject-types'
+import { createTypeInjector } from '@/plugin/inject-types'
 
 function init(modules: { typescript: typeof ts }) {
   const tsModule = modules.typescript
