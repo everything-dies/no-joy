@@ -1,6 +1,6 @@
 import _generate from '@babel/generator'
 import * as t from '@babel/types'
-import { join, relative, sep } from 'node:path'
+import { relative, sep } from 'node:path'
 
 import { extractExportNames } from './exports'
 import { type ComponentEntry } from './scanner'
@@ -195,8 +195,9 @@ function buildI18nDeclarations(
     ])
   )
 
-  // const _x$i18nTranslations = import.meta.glob("/abs/path/button/i18n/*.json")
-  const globPattern = join(component.dir, 'i18n', '*.json').split(sep).join('/')
+  // const _x$i18nTranslations = import.meta.glob("/src/components/button/i18n/*.json")
+  // Pattern must be project-root-relative (leading /) for Vite's import.meta.glob
+  const globPattern = `/${relativePath}/i18n/*.json`
   statements.push(
     t.variableDeclaration('const', [
       t.variableDeclarator(
