@@ -331,6 +331,69 @@ describe('generateComponentWrapper', () => {
       expect(code).toContain(`click: ${P}click`)
       expect(code).toContain(`i18n: ${P}i18n`)
     })
+
+    it('splits into inner + outer functions for Suspense boundary', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      // Inner function has hooks and renders View
+      expect(code).toContain(`function ${P}Inner(${P}props)`)
+      expect(code).toContain(`${P}createElement(${P}View`)
+
+      // Outer function wraps Inner with Suspense
+      expect(code).toContain(`function NojoyWithI18n(${P}props)`)
+      expect(code).toContain(`${P}createElement(${P}Suspense`)
+      expect(code).toContain(`${P}createElement(${P}Inner, ${P}props)`)
+    })
+
+    it('imports Suspense even without placeholder concern', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(`Suspense as ${P}Suspense`)
+      // Without placeholder, fallback is null
+      expect(code).toContain('fallback: null')
+    })
+
+    it('uses Placeholder as Suspense fallback when both i18n and placeholder exist', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+          placeholder: resolve(
+            FIXTURES,
+            'components/with-i18n/placeholder.tsx'
+          ),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      // Inner function has hooks
+      expect(code).toContain(`function ${P}Inner(${P}props)`)
+      // Outer wraps with Suspense using Placeholder fallback
+      expect(code).toContain(
+        `fallback: ${P}createElement(${P}Placeholder, null)`
+      )
+    })
   })
 
   describe('displayName and export', () => {

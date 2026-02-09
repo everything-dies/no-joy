@@ -52,7 +52,7 @@ function buildImports(
     ),
     t.importSpecifier(t.identifier(`${prefix}lazy`), t.identifier('lazy')),
   ]
-  if (concerns.placeholder) {
+  if (concerns.placeholder || concerns.i18n) {
     reactSpecifiers.push(
       t.importSpecifier(
         t.identifier(`${prefix}Suspense`),
@@ -221,13 +221,12 @@ function buildComponentFunction(
   displayName: string,
   asyncExports: string[],
   concerns: ConcernPaths
-): t.FunctionDeclaration {
-  const body: t.Statement[] = []
+): t.Statement[] {
+  // Build hook call statements
+  const hookStatements: t.Statement[] = []
 
-  // Hook calls (only if async exports exist)
   if (asyncExports.length > 0) {
-    // const _x$dataPlane = _x$useNojoy()
-    body.push(
+    hookStatements.push(
       t.variableDeclaration('const', [
         t.variableDeclarator(
           t.identifier(`${prefix}dataPlane`),
@@ -235,10 +234,8 @@ function buildComponentFunction(
         ),
       ])
     )
-
-    // const _x$click = _x$useAsyncHandler(click, _x$dataPlane)
     for (const name of asyncExports) {
-      body.push(
+      hookStatements.push(
         t.variableDeclaration('const', [
           t.variableDeclarator(
             t.identifier(`${prefix}${name}`),
@@ -252,10 +249,8 @@ function buildComponentFunction(
     }
   }
 
-  // i18n hook call
   if (concerns.i18n) {
-    // const _x$i18n = _x$useI18n(_x$i18nDefaults, _x$i18nNamespace, _x$i18nTranslations)
-    body.push(
+    hookStatements.push(
       t.variableDeclaration('const', [
         t.variableDeclarator(
           t.identifier(`${prefix}i18n`),
@@ -287,15 +282,70 @@ function buildComponentFunction(
         ])
       : t.identifier(`${prefix}props`)
 
-  // Build view element: createElement(View, propsArg)
-  let element: t.Expression = t.callExpression(
+  // View element: createElement(View, propsArg)
+  const viewElement: t.Expression = t.callExpression(
     t.identifier(`${prefix}createElement`),
     [t.identifier(`${prefix}View`), propsArg]
   )
 
-  // Wrap with Suspense if placeholder exists
+  // When i18n exists, split into inner (hooks) + outer (boundaries)
+  // because useI18n throws Promises for Suspense — the Suspense boundary
+  // must be an ancestor component, not in the same render function.
+  if (concerns.i18n) {
+    const innerFn = t.functionDeclaration(
+      t.identifier(`${prefix}Inner`),
+      [t.identifier(`${prefix}props`)],
+      t.blockStatement([...hookStatements, t.returnStatement(viewElement)])
+    )
+
+    // Outer wraps createElement(Inner, props) with Suspense + ErrorBoundary
+    let outerElement: t.Expression = t.callExpression(
+      t.identifier(`${prefix}createElement`),
+      [t.identifier(`${prefix}Inner`), t.identifier(`${prefix}props`)]
+    )
+
+    // Suspense (always when i18n — needed for useI18n's thrown Promise)
+    const fallback = concerns.placeholder
+      ? t.callExpression(t.identifier(`${prefix}createElement`), [
+          t.identifier(`${prefix}Placeholder`),
+          t.nullLiteral(),
+        ])
+      : t.nullLiteral()
+
+    outerElement = t.callExpression(t.identifier(`${prefix}createElement`), [
+      t.identifier(`${prefix}Suspense`),
+      t.objectExpression([
+        t.objectProperty(t.identifier('fallback'), fallback),
+      ]),
+      outerElement,
+    ])
+
+    if (concerns.error) {
+      outerElement = t.callExpression(t.identifier(`${prefix}createElement`), [
+        t.identifier(`${prefix}ErrorBoundary`),
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier('FallbackComponent'),
+            t.identifier(`${prefix}ErrorFallback`)
+          ),
+        ]),
+        outerElement,
+      ])
+    }
+
+    const outerFn = t.functionDeclaration(
+      t.identifier(`Nojoy${displayName}`),
+      [t.identifier(`${prefix}props`)],
+      t.blockStatement([t.returnStatement(outerElement)])
+    )
+
+    return [innerFn, outerFn]
+  }
+
+  // No i18n — single function with inline wrapping
+  let element: t.Expression = viewElement
+
   if (concerns.placeholder) {
-    // createElement(Suspense, { fallback: createElement(Placeholder, null) }, viewElement)
     element = t.callExpression(t.identifier(`${prefix}createElement`), [
       t.identifier(`${prefix}Suspense`),
       t.objectExpression([
@@ -311,9 +361,7 @@ function buildComponentFunction(
     ])
   }
 
-  // Wrap with ErrorBoundary if error exists
   if (concerns.error) {
-    // createElement(ErrorBoundary, { FallbackComponent: ErrorFallback }, element)
     element = t.callExpression(t.identifier(`${prefix}createElement`), [
       t.identifier(`${prefix}ErrorBoundary`),
       t.objectExpression([
@@ -326,13 +374,13 @@ function buildComponentFunction(
     ])
   }
 
-  body.push(t.returnStatement(element))
-
-  return t.functionDeclaration(
-    t.identifier(`Nojoy${displayName}`),
-    [t.identifier(`${prefix}props`)],
-    t.blockStatement(body)
-  )
+  return [
+    t.functionDeclaration(
+      t.identifier(`Nojoy${displayName}`),
+      [t.identifier(`${prefix}props`)],
+      t.blockStatement([...hookStatements, t.returnStatement(element)])
+    ),
+  ]
 }
 
 export function generateComponentWrapper(
@@ -354,7 +402,7 @@ export function generateComponentWrapper(
   const i18nDecls = concerns.i18n
     ? buildI18nDeclarations(prefix, component, root)
     : []
-  const componentFn = buildComponentFunction(
+  const componentStatements = buildComponentFunction(
     prefix,
     displayName,
     asyncExports,
@@ -382,7 +430,7 @@ export function generateComponentWrapper(
     ...imports,
     viewDecl,
     ...i18nDecls,
-    componentFn,
+    ...componentStatements,
     displayNameAssignment,
     defaultExport,
   ])
