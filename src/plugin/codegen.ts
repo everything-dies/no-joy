@@ -1,7 +1,6 @@
-import { join, relative, sep } from 'node:path'
-
 import _generate from '@babel/generator'
 import * as t from '@babel/types'
+import { join, relative, sep } from 'node:path'
 
 import { extractExportNames } from './exports'
 import { type ComponentEntry } from './scanner'

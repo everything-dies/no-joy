@@ -1,5 +1,4 @@
 import { dirname, join } from 'node:path'
-
 import type ts from 'typescript'
 
 const ENTRY_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx']

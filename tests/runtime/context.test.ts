@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 import { renderHook } from '@testing-library/react'
 import { createElement } from 'react'
+import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 
 import { NojoyProvider, useNojoy } from '../../src/runtime'
-
-import type { ReactNode } from 'react'
 
 describe('useNojoy', () => {
   it('throws when used outside NojoyProvider', () => {

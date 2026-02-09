@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef } from 'react'
 
-import { type AsyncFactory, type AsyncHandler, type DataPlane } from './types'
-
 import { useLatency } from '@/hooks/latency'
+
+import { type AsyncFactory, type AsyncHandler, type DataPlane } from './types'
 
 export function useAsyncHandler<
   TArgs extends unknown[] = unknown[],

@@ -3,7 +3,6 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { useAsyncHandler } from '../../../src/hooks/async-handler'
-
 import type { DataPlane } from '../../../src/hooks/async-handler'
 
 function deferred<T>() {

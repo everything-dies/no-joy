@@ -1,12 +1,10 @@
 import { resolve } from 'node:path'
-
 import { describe, expect, it } from 'vitest'
 
 import {
   generateComponentWrapper,
   generatePrefix,
 } from '../../src/plugin/codegen'
-
 import type { ComponentEntry } from '../../src/plugin/scanner'
 
 const FIXTURES = resolve(__dirname, 'fixtures/basic')

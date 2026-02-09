@@ -1,12 +1,10 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-
+import type { Plugin, ResolvedConfig } from 'vite'
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 
 import { nojoyPlugin } from '../../src/plugin/vite-plugin'
-
-import type { Plugin, ResolvedConfig } from 'vite'
 
 function createTmpSrcDir(): string {
   const dir = join(

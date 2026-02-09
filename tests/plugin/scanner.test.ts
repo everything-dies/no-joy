@@ -1,5 +1,4 @@
 import { resolve } from 'node:path'
-
 import { describe, expect, it } from 'vitest'
 
 import { scan } from '../../src/plugin/scanner'

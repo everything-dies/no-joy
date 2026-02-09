@@ -1,7 +1,6 @@
-import { readFileSync } from 'node:fs'
-
 import { parse } from '@babel/parser'
 import _traverse from '@babel/traverse'
+import { readFileSync } from 'node:fs'
 
 // Handle CJS/ESM interop for @babel/traverse
 const traverse =

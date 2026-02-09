@@ -1,12 +1,10 @@
-import { join, resolve } from 'node:path'
-
 import { watch } from 'chokidar'
+import { join, resolve } from 'node:path'
+import type { Plugin, ViteDevServer } from 'vite'
 
 import { generateComponentWrapper, generatePrefix } from './codegen'
 import { scan } from './scanner'
-
 import type { ComponentEntry, ScanResult } from './scanner'
-import type { Plugin, ViteDevServer } from 'vite'
 
 const VIRTUAL_PREFIX = '\0nojoy:component:'
 

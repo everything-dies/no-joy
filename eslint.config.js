@@ -5,7 +5,14 @@ import importPlugin from 'eslint-plugin-import'
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'examples/**', '*.config.js', '*.config.ts', 'sandbox/**'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'examples/**',
+      '*.config.js',
+      '*.config.ts',
+      'sandbox/**',
+    ],
   },
 
   // Base config for all TS files
@@ -46,19 +53,22 @@ export default [
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
 
-      // Import ordering and organization
+      // Import ordering: 3rd-party → @/ local absolute → relative
       'import/order': [
         'error',
         {
           groups: [
-            'builtin',
-            'external',
+            ['builtin', 'external'],
             'internal',
-            'parent',
-            'sibling',
-            'index',
-            'type',
+            ['parent', 'sibling', 'index'],
           ],
+          pathGroups: [
+            {
+              pattern: '@/**',
+              group: 'internal',
+            },
+          ],
+          pathGroupsExcludedImportTypes: [],
           'newlines-between': 'always',
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
