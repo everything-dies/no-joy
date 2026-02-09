@@ -1,0 +1,6 @@
+{
+  "content": "Das ist mein Button",
+  "fallback": "Warten auf die Auflösung des Klicks...",
+  "error/title": "Etwas hat nicht funktioniert",
+  "error/actions/retry": "Erneut versuchen"
+}
