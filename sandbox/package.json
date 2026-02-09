@@ -10,12 +10,15 @@
   },
   "dependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-error-boundary": "^6.1.0",
+    "react-intl": "^8.1.3"
   },
   "devDependencies": {
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.3",
+    "nojoy": "workspace:*",
     "typescript": "^5.9.3",
     "vite": "^6.4.1"
   }

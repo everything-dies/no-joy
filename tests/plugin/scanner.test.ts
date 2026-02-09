@@ -68,6 +68,7 @@ describe('scan', () => {
         'widgets/card',
         'with-error',
         'with-error-dir',
+        'with-i18n',
         'with-placeholder',
       ])
     })
@@ -125,6 +126,14 @@ describe('scan', () => {
       expect(comp?.concerns['error']).toContain(
         'components/with-error-dir/error/index.tsx'
       )
+    })
+
+    it('discovers i18n concern', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-i18n')
+
+      expect(comp).toBeDefined()
+      expect(comp?.concerns['i18n']).toContain('components/with-i18n/i18n.ts')
     })
 
     it('discovers all concerns on full component', () => {

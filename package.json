@@ -34,15 +34,20 @@
       "types": "./dist/runtime.d.ts",
       "import": "./dist/runtime.js"
     },
+    "./ts-plugin": {
+      "require": "./ts-plugin/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "ts-plugin",
     "README.md",
     "LICENSE"
   ],
   "sideEffects": false,
   "scripts": {
+    "postinstall": "node -e \"var fs=require('fs'),p='node_modules/nojoy';try{fs.lstatSync(p)}catch{fs.symlinkSync('..',p)}\"",
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
@@ -60,6 +65,7 @@
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-intl": "^7.0.0 || ^8.0.0",
     "vite": "^6.0.0 || ^7.0.0"
   },
   "dependencies": {
@@ -74,6 +80,7 @@
     "fast-glob": "^3.3.3",
     "picomatch": "^4.0.3",
     "react-error-boundary": "^6.1.0",
+    "react-intl": "^8.1.3",
     "xstate": "^5.26.0"
   },
   "devDependencies": {

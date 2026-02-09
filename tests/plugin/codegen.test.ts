@@ -35,7 +35,7 @@ describe('generateComponentWrapper', () => {
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(
         `import { createElement as ${P}createElement, lazy as ${P}lazy } from "react"`
@@ -57,7 +57,7 @@ describe('generateComponentWrapper', () => {
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(
         `import { useNojoy as ${P}useNojoy } from "nojoy/runtime"`
@@ -78,7 +78,7 @@ describe('generateComponentWrapper', () => {
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(`const ${P}dataPlane = ${P}useNojoy()`)
       expect(code).toContain(
@@ -102,7 +102,7 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(`Suspense as ${P}Suspense`)
       expect(code).toContain(
@@ -123,7 +123,7 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(`${P}createElement(${P}Suspense`)
       expect(code).toContain(
@@ -144,7 +144,7 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).not.toContain('useNojoy')
       expect(code).not.toContain('useAsyncHandler')
@@ -162,7 +162,7 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(
         `import { ErrorBoundary as ${P}ErrorBoundary } from "react-error-boundary"`
@@ -182,7 +182,7 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(`${P}createElement(${P}ErrorBoundary`)
       expect(code).toContain(`FallbackComponent: ${P}ErrorFallback`)
@@ -202,7 +202,7 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       // ErrorBoundary is outermost
       expect(code).toContain(`${P}createElement(${P}ErrorBoundary`)
@@ -231,12 +231,105 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain('from "react"')
       expect(code).toContain('from "nojoy/runtime"')
       expect(code).toContain('from "react-error-boundary"')
       expect(code).toContain(`import { load }`)
+    })
+  })
+
+  describe('i18n concern', () => {
+    it('imports useI18n and i18n defaults', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(
+        `import { useI18n as ${P}useI18n } from "nojoy/runtime"`
+      )
+      expect(code).toContain(
+        `import ${P}i18nDefaults from "${component.concerns['i18n']}"`
+      )
+    })
+
+    it('generates namespace and import.meta.glob declarations', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(`const ${P}i18nNamespace = "components/with-i18n"`)
+      expect(code).toContain(`import.meta.glob(`)
+      expect(code).toContain(`/i18n/*.json`)
+    })
+
+    it('generates useI18n hook call and passes i18n prop', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(
+        `const ${P}i18n = ${P}useI18n(${P}i18nDefaults, ${P}i18nNamespace, ${P}i18nTranslations)`
+      )
+      expect(code).toContain(`i18n: ${P}i18n`)
+    })
+
+    it('does not include async hooks without async concern', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).not.toContain('useNojoy')
+      expect(code).not.toContain('useAsyncHandler')
+    })
+
+    it('combines i18n with async concerns', () => {
+      const component: ComponentEntry = {
+        name: 'button',
+        dir: resolve(FIXTURES, 'components/button'),
+        viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
+        concerns: {
+          async: resolve(FIXTURES, 'components/button/async.ts'),
+          i18n: resolve(FIXTURES, 'components/button/i18n.ts'),
+        },
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      // Should have both async and i18n
+      expect(code).toContain('useAsyncHandler')
+      expect(code).toContain('useI18n')
+      expect(code).toContain(`click: ${P}click`)
+      expect(code).toContain(`i18n: ${P}i18n`)
     })
   })
 
@@ -251,7 +344,7 @@ describe('generateComponentWrapper', () => {
         },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(`function NojoyWidgetsCard(${P}props)`)
       expect(code).toContain('NojoyWidgetsCard.displayName = "WidgetsCard"')
@@ -265,7 +358,7 @@ describe('generateComponentWrapper', () => {
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain('export default NojoyButton')
     })
@@ -280,7 +373,7 @@ describe('generateComponentWrapper', () => {
         concerns: {},
       }
 
-      const code = generateComponentWrapper(component, P)
+      const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).not.toContain('useAsyncHandler')
       expect(code).not.toContain('Suspense')

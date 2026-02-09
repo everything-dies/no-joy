@@ -2,6 +2,7 @@
 export {
   NojoyProvider,
   useNojoy,
+  useI18n,
   type NojoyProviderProps,
 } from './runtime/index'
 export {

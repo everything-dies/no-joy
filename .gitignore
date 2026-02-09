@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Generated type declarations
+**/__nojoy.ts
+
 # IDE (personal)
 *.swp
 *.swo

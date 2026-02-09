@@ -11,3 +11,4 @@ export {
   type ServiceEntry,
   type ServiceModuleMap,
 } from './create-services'
+export { useI18n } from '../hooks/i18n'

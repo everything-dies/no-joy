@@ -24,7 +24,7 @@ export interface ScanResult {
   components: ComponentEntry[]
 }
 
-const CONCERN_FILES = new Set(['async', 'placeholder', 'error'])
+const CONCERN_FILES = new Set(['async', 'placeholder', 'error', 'i18n'])
 
 const VIEW_EXTENSIONS = ['.tsx', '.jsx']
 const ENTRY_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx']

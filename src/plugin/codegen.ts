@@ -1,3 +1,5 @@
+import { join, relative, sep } from 'node:path'
+
 import _generate from '@babel/generator'
 import * as t from '@babel/types'
 
@@ -32,6 +34,7 @@ interface ConcernPaths {
   async: string | undefined
   placeholder: string | undefined
   error: string | undefined
+  i18n: string | undefined
 }
 
 function buildImports(
@@ -83,6 +86,27 @@ function buildImports(
           ),
         ],
         t.stringLiteral('nojoy/runtime')
+      )
+    )
+  }
+
+  // useI18n import (if i18n concern exists)
+  if (concerns.i18n) {
+    statements.push(
+      t.importDeclaration(
+        [
+          t.importSpecifier(
+            t.identifier(`${prefix}useI18n`),
+            t.identifier('useI18n')
+          ),
+        ],
+        t.stringLiteral('nojoy/runtime')
+      )
+    )
+    statements.push(
+      t.importDeclaration(
+        [t.importDefaultSpecifier(t.identifier(`${prefix}i18nDefaults`))],
+        t.stringLiteral(concerns.i18n)
       )
     )
   }
@@ -154,6 +178,44 @@ function buildViewDeclaration(
   ])
 }
 
+function buildI18nDeclarations(
+  prefix: string,
+  component: ComponentEntry,
+  root: string
+): t.Statement[] {
+  const statements: t.Statement[] = []
+
+  // const _x$i18nNamespace = "src/components/widgets/button"
+  const relativePath = relative(root, component.dir).split(sep).join('/')
+  statements.push(
+    t.variableDeclaration('const', [
+      t.variableDeclarator(
+        t.identifier(`${prefix}i18nNamespace`),
+        t.stringLiteral(relativePath)
+      ),
+    ])
+  )
+
+  // const _x$i18nTranslations = import.meta.glob("/abs/path/button/i18n/*.json")
+  const globPattern = join(component.dir, 'i18n', '*.json').split(sep).join('/')
+  statements.push(
+    t.variableDeclaration('const', [
+      t.variableDeclarator(
+        t.identifier(`${prefix}i18nTranslations`),
+        t.callExpression(
+          t.memberExpression(
+            t.metaProperty(t.identifier('import'), t.identifier('meta')),
+            t.identifier('glob')
+          ),
+          [t.stringLiteral(globPattern)]
+        )
+      ),
+    ])
+  )
+
+  return statements
+}
+
 function buildComponentFunction(
   prefix: string,
   displayName: string,
@@ -190,17 +252,38 @@ function buildComponentFunction(
     }
   }
 
+  // i18n hook call
+  if (concerns.i18n) {
+    // const _x$i18n = _x$useI18n(_x$i18nDefaults, _x$i18nNamespace, _x$i18nTranslations)
+    body.push(
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier(`${prefix}i18n`),
+          t.callExpression(t.identifier(`${prefix}useI18n`), [
+            t.identifier(`${prefix}i18nDefaults`),
+            t.identifier(`${prefix}i18nNamespace`),
+            t.identifier(`${prefix}i18nTranslations`),
+          ])
+        ),
+      ])
+    )
+  }
+
   // Build view element props
+  const concernProps: t.ObjectProperty[] = asyncExports.map((name) =>
+    t.objectProperty(t.identifier(name), t.identifier(`${prefix}${name}`))
+  )
+  if (concerns.i18n) {
+    concernProps.push(
+      t.objectProperty(t.identifier('i18n'), t.identifier(`${prefix}i18n`))
+    )
+  }
+
   const propsArg =
-    asyncExports.length > 0
+    concernProps.length > 0
       ? t.objectExpression([
           t.spreadElement(t.identifier(`${prefix}props`)),
-          ...asyncExports.map((name) =>
-            t.objectProperty(
-              t.identifier(name),
-              t.identifier(`${prefix}${name}`)
-            )
-          ),
+          ...concernProps,
         ])
       : t.identifier(`${prefix}props`)
 
@@ -254,18 +337,23 @@ function buildComponentFunction(
 
 export function generateComponentWrapper(
   component: ComponentEntry,
-  prefix: string
+  prefix: string,
+  root: string
 ): string {
   const concerns: ConcernPaths = {
     async: component.concerns['async'],
     placeholder: component.concerns['placeholder'],
     error: component.concerns['error'],
+    i18n: component.concerns['i18n'],
   }
   const asyncExports = concerns.async ? extractExportNames(concerns.async) : []
   const displayName = buildDisplayName(component.name)
 
   const imports = buildImports(prefix, concerns, asyncExports)
   const viewDecl = buildViewDeclaration(prefix, component.viewPath)
+  const i18nDecls = concerns.i18n
+    ? buildI18nDeclarations(prefix, component, root)
+    : []
   const componentFn = buildComponentFunction(
     prefix,
     displayName,
@@ -293,6 +381,7 @@ export function generateComponentWrapper(
   const program = t.program([
     ...imports,
     viewDecl,
+    ...i18nDecls,
     componentFn,
     displayNameAssignment,
     defaultExport,
