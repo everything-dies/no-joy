@@ -1,4 +1,8 @@
+import { resolve } from 'node:path'
+
 import { defineConfig } from 'tsup'
+
+const srcAlias = resolve(__dirname, 'src')
 
 export default defineConfig([
   {
@@ -16,6 +20,7 @@ export default defineConfig([
     esbuildOptions(options) {
       options.platform = 'node'
       options.target = 'node20'
+      options.alias = { '@': srcAlias }
     },
   },
   {
@@ -28,5 +33,8 @@ export default defineConfig([
     clean: false,
     splitting: false,
     external: ['typescript'],
+    esbuildOptions(options) {
+      options.alias = { '@': srcAlias }
+    },
   },
 ])

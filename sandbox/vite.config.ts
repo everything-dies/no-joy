@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [nojoyPlugin(), react()],
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'src'),
       'nojoy/runtime': path.resolve(__dirname, '../src/runtime.ts'),
       'nojoy': path.resolve(__dirname, '../src/index.ts'),
     },

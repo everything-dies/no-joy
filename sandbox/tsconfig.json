@@ -12,7 +12,9 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
     "paths": {
+      "@/*": ["./src/*"],
       "nojoy/runtime": ["../src/runtime.ts"]
     },
     "plugins": [
