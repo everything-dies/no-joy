@@ -1,8 +1,7 @@
 import { type DataPlane } from '../hooks/async-handler'
 
-export type ServiceEntry = (
-  dataPlane: DataPlane
-) => (...args: never[]) => unknown
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ServiceEntry = (dataPlane: any) => (...args: never[]) => unknown
 
 export type ServiceModuleMap = Record<string, Record<string, ServiceEntry>>
 

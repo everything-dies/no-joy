@@ -57,7 +57,7 @@
     "lint:fix": "eslint src tests --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsx scripts/typecheck.ts",
     "prepublishOnly": "npm run lint && npm run typecheck && npm run test:run && npm run build",
     "release": "changeset publish",
     "version": "changeset version"
@@ -107,6 +107,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.2.1"

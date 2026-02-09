@@ -11,12 +11,15 @@ export function App() {
     <NojoyProvider clients={clients} services={services}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
         <h1>nojoy sandbox</h1>
+        {/* @ts-expect-error nojoy injects props via virtual module at build-time */}
         <Button />
         <hr />
         <Broken />
         <hr />
+        {/* @ts-expect-error nojoy injects props via virtual module at build-time */}
         <UserList />
         <hr />
+        {/* @ts-expect-error nojoy injects props via virtual module at build-time */}
         <PostList />
       </div>
     </NojoyProvider>
