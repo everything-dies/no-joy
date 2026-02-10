@@ -31,6 +31,7 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/button'),
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -53,6 +54,7 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/button'),
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -74,6 +76,7 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/button'),
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -98,6 +101,7 @@ describe('generateComponentWrapper', () => {
             'components/with-placeholder/placeholder.tsx'
           ),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -119,6 +123,7 @@ describe('generateComponentWrapper', () => {
             'components/with-placeholder/placeholder.tsx'
           ),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -140,6 +145,7 @@ describe('generateComponentWrapper', () => {
             'components/with-placeholder/placeholder.tsx'
           ),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -158,6 +164,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           error: resolve(FIXTURES, 'components/with-error/error.tsx'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -178,6 +185,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           error: resolve(FIXTURES, 'components/with-error/error.tsx'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -198,6 +206,7 @@ describe('generateComponentWrapper', () => {
           placeholder: resolve(FIXTURES, 'components/full/placeholder.tsx'),
           error: resolve(FIXTURES, 'components/full/error.tsx'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -227,6 +236,7 @@ describe('generateComponentWrapper', () => {
           placeholder: resolve(FIXTURES, 'components/full/placeholder.tsx'),
           error: resolve(FIXTURES, 'components/full/error.tsx'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -247,6 +257,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -267,6 +278,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -284,6 +296,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -302,6 +315,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -319,6 +333,7 @@ describe('generateComponentWrapper', () => {
           async: resolve(FIXTURES, 'components/button/async.ts'),
           i18n: resolve(FIXTURES, 'components/button/i18n.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -338,6 +353,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -360,6 +376,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -381,6 +398,7 @@ describe('generateComponentWrapper', () => {
             'components/with-i18n/placeholder.tsx'
           ),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -403,6 +421,7 @@ describe('generateComponentWrapper', () => {
         concerns: {
           async: resolve(FIXTURES, 'components/widgets/card/async.ts'),
         },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -417,6 +436,7 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/button'),
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -432,6 +452,7 @@ describe('generateComponentWrapper', () => {
         dir: resolve(FIXTURES, 'components/plain'),
         viewPath: resolve(FIXTURES, 'components/plain/index.tsx'),
         concerns: {},
+        skins: {},
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -440,6 +461,173 @@ describe('generateComponentWrapper', () => {
       expect(code).not.toContain('Suspense')
       expect(code).not.toContain('ErrorBoundary')
       expect(code).toContain(`return ${P}createElement(${P}View, ${P}props)`)
+    })
+  })
+
+  describe('skins concern', () => {
+    const SKINS_DIR = resolve(FIXTURES, 'components/with-skins')
+    const SKINS = {
+      material: resolve(SKINS_DIR, 'skins/material.ts'),
+      brutalist: resolve(SKINS_DIR, 'skins/brutalist.ts'),
+    }
+
+    it('imports styled from nojoy/runtime', () => {
+      const component: ComponentEntry = {
+        name: 'with-skins',
+        dir: SKINS_DIR,
+        viewPath: resolve(SKINS_DIR, 'index.tsx'),
+        concerns: {},
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(
+        `import { styled as ${P}styled } from "nojoy/runtime"`
+      )
+    })
+
+    it('imports Suspense for suspendable skin loading', () => {
+      const component: ComponentEntry = {
+        name: 'with-skins',
+        dir: SKINS_DIR,
+        viewPath: resolve(SKINS_DIR, 'index.tsx'),
+        concerns: {},
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(`Suspense as ${P}Suspense`)
+    })
+
+    it('generates styled() wrapping View directly when no hooks', () => {
+      const component: ComponentEntry = {
+        name: 'with-skins',
+        dir: SKINS_DIR,
+        viewPath: resolve(SKINS_DIR, 'index.tsx'),
+        concerns: {},
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(
+        `const ${P}Styled = ${P}styled(${P}View`
+      )
+      expect(code).toContain(`name: "nojoy-with-skins"`)
+      expect(code).toContain(`suspendable: true`)
+    })
+
+    it('generates skins map with dynamic imports', () => {
+      const component: ComponentEntry = {
+        name: 'with-skins',
+        dir: SKINS_DIR,
+        viewPath: resolve(SKINS_DIR, 'index.tsx'),
+        concerns: {},
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(`material: () => import("${SKINS.material}")`)
+      expect(code).toContain(`brutalist: () => import("${SKINS.brutalist}")`)
+    })
+
+    it('wraps styled with Suspense in outer function', () => {
+      const component: ComponentEntry = {
+        name: 'with-skins',
+        dir: SKINS_DIR,
+        viewPath: resolve(SKINS_DIR, 'index.tsx'),
+        concerns: {},
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(`function NojoyWithSkins(${P}props)`)
+      expect(code).toContain(`${P}createElement(${P}Suspense`)
+      expect(code).toContain(`${P}createElement(${P}Styled, ${P}props)`)
+      expect(code).toContain('fallback: null')
+    })
+
+    it('generates Core function when hooks exist (skins + async)', () => {
+      const component: ComponentEntry = {
+        name: 'button',
+        dir: resolve(FIXTURES, 'components/button'),
+        viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
+        concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      // Core function has hooks and renders View
+      expect(code).toContain(`function ${P}Core(${P}props)`)
+      expect(code).toContain(`${P}useAsyncHandler`)
+      expect(code).toContain(`${P}createElement(${P}View`)
+
+      // styled wraps Core, not View
+      expect(code).toContain(`${P}styled(${P}Core`)
+
+      // Outer renders styled
+      expect(code).toContain(`function NojoyButton(${P}props)`)
+      expect(code).toContain(`${P}createElement(${P}Styled, ${P}props)`)
+    })
+
+    it('generates correct element name from nested component path', () => {
+      const component: ComponentEntry = {
+        name: 'widgets/card',
+        dir: resolve(FIXTURES, 'components/widgets/card'),
+        viewPath: resolve(FIXTURES, 'components/widgets/card/index.tsx'),
+        concerns: {},
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(`name: "nojoy-widgets-card"`)
+    })
+
+    it('combines skins with i18n (Core has hooks, styled wraps Core)', () => {
+      const component: ComponentEntry = {
+        name: 'with-i18n',
+        dir: resolve(FIXTURES, 'components/with-i18n'),
+        viewPath: resolve(FIXTURES, 'components/with-i18n/index.tsx'),
+        concerns: {
+          i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
+        },
+        skins: SKINS,
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      // Core has useI18n hook
+      expect(code).toContain(`function ${P}Core(${P}props)`)
+      expect(code).toContain(`${P}useI18n`)
+      expect(code).toContain(`i18n: ${P}i18n`)
+
+      // styled wraps Core
+      expect(code).toContain(`${P}styled(${P}Core`)
+
+      // Outer wraps styled with Suspense
+      expect(code).toContain(`${P}createElement(${P}Suspense`)
+      expect(code).toContain(`${P}createElement(${P}Styled, ${P}props)`)
+    })
+
+    it('does not generate styled when skins is empty', () => {
+      const component: ComponentEntry = {
+        name: 'button',
+        dir: resolve(FIXTURES, 'components/button'),
+        viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
+        concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
+        skins: {},
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).not.toContain('styled')
+      expect(code).not.toContain('Styled')
     })
   })
 })

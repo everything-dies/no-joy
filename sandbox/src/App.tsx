@@ -9,9 +9,15 @@ import Button from './components/widgets/button'
 
 export function App() {
   const [locale, setLocale] = useState(navigator.language)
+  const [skin, setSkin] = useState('material')
 
   return (
-    <NojoyProvider clients={clients} services={services} locale={locale}>
+    <NojoyProvider
+      clients={clients}
+      services={services}
+      locale={locale}
+      skin={skin}
+    >
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
         <h1>nojoy sandbox</h1>
         <label>
@@ -21,6 +27,14 @@ export function App() {
             <option value="pt-BR">Portugues (BR)</option>
             <option value="es">Espanol</option>
             <option value="de">Deutsch</option>
+          </select>
+        </label>
+        {' '}
+        <label>
+          Skin:{' '}
+          <select value={skin} onChange={(e) => setSkin(e.target.value)}>
+            <option value="material">Material</option>
+            <option value="brutalist">Brutalist</option>
           </select>
         </label>
         <hr />

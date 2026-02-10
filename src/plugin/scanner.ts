@@ -6,6 +6,7 @@ export interface ComponentEntry {
   dir: string
   viewPath: string
   concerns: Record<string, string>
+  skins: Record<string, string>
 }
 
 export interface ClientEntry {
@@ -25,6 +26,7 @@ export interface ScanResult {
 }
 
 const CONCERN_FILES = new Set(['async', 'placeholder', 'error', 'i18n'])
+const SKIN_EXTENSIONS = ['.ts', '.js']
 
 const VIEW_EXTENSIONS = ['.tsx', '.jsx']
 const ENTRY_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx']
@@ -102,6 +104,23 @@ function scanServices(
   return entries
 }
 
+function scanSkins(componentDir: string): Record<string, string> {
+  const skinsDir = join(componentDir, 'skins')
+  if (!existsSync(skinsDir) || !statSync(skinsDir).isDirectory()) return {}
+
+  const skins: Record<string, string> = {}
+  for (const file of readdirSync(skinsDir)) {
+    const ext = SKIN_EXTENSIONS.find((e) => file.endsWith(e))
+    if (ext) {
+      const skinName = file.slice(0, -ext.length)
+      if (skinName !== 'index') {
+        skins[skinName] = join(skinsDir, file)
+      }
+    }
+  }
+  return skins
+}
+
 function scanComponents(
   componentsDir: string,
   basePath: string = componentsDir
@@ -135,14 +154,18 @@ function scanComponents(
         }
       }
 
-      // Only register as a framework component if it has concern files
-      if (Object.keys(concerns).length > 0) {
+      // Scan for skins directory
+      const skins = scanSkins(dirPath)
+
+      // Only register as a framework component if it has concern files or skins
+      if (Object.keys(concerns).length > 0 || Object.keys(skins).length > 0) {
         const componentName = relative(basePath, dirPath).split(sep).join('/')
         entries.push({
           name: componentName,
           dir: dirPath,
           viewPath,
           concerns,
+          skins,
         })
       }
     }

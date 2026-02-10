@@ -34,6 +34,11 @@ interface ConcernPaths {
   placeholder: string | undefined
   error: string | undefined
   i18n: string | undefined
+  skins: Record<string, string> | undefined
+}
+
+function buildElementName(componentName: string): string {
+  return `nojoy-${componentName.replace(/\//g, '-')}`
 }
 
 function buildImports(
@@ -51,7 +56,8 @@ function buildImports(
     ),
     t.importSpecifier(t.identifier(`${prefix}lazy`), t.identifier('lazy')),
   ]
-  if (concerns.placeholder || concerns.i18n) {
+  const hasSkins = concerns.skins && Object.keys(concerns.skins).length > 0
+  if (concerns.placeholder || concerns.i18n || hasSkins) {
     reactSpecifiers.push(
       t.importSpecifier(
         t.identifier(`${prefix}Suspense`),
@@ -137,6 +143,21 @@ function buildImports(
       t.importDeclaration(
         [t.importDefaultSpecifier(t.identifier(`${prefix}Placeholder`))],
         t.stringLiteral(concerns.placeholder)
+      )
+    )
+  }
+
+  // styled import (if skins concern exists)
+  if (hasSkins) {
+    statements.push(
+      t.importDeclaration(
+        [
+          t.importSpecifier(
+            t.identifier(`${prefix}styled`),
+            t.identifier('styled')
+          ),
+        ],
+        t.stringLiteral('nojoy/runtime')
       )
     )
   }
@@ -228,17 +249,15 @@ function buildI18nDeclarations(
   return statements
 }
 
-function buildComponentFunction(
+function buildHookStatements(
   prefix: string,
-  displayName: string,
   asyncExports: string[],
   concerns: ConcernPaths
 ): t.Statement[] {
-  // Build hook call statements
-  const hookStatements: t.Statement[] = []
+  const statements: t.Statement[] = []
 
   if (asyncExports.length > 0) {
-    hookStatements.push(
+    statements.push(
       t.variableDeclaration('const', [
         t.variableDeclarator(
           t.identifier(`${prefix}dataPlane`),
@@ -247,7 +266,7 @@ function buildComponentFunction(
       ])
     )
     for (const name of asyncExports) {
-      hookStatements.push(
+      statements.push(
         t.variableDeclaration('const', [
           t.variableDeclarator(
             t.identifier(`${prefix}${name}`),
@@ -262,7 +281,7 @@ function buildComponentFunction(
   }
 
   if (concerns.i18n) {
-    hookStatements.push(
+    statements.push(
       t.variableDeclaration('const', [
         t.variableDeclarator(
           t.identifier(`${prefix}i18n`),
@@ -276,7 +295,14 @@ function buildComponentFunction(
     )
   }
 
-  // Build view element props
+  return statements
+}
+
+function buildViewElement(
+  prefix: string,
+  asyncExports: string[],
+  concerns: ConcernPaths
+): t.Expression {
   const concernProps: t.ObjectProperty[] = asyncExports.map((name) =>
     t.objectProperty(t.identifier(name), t.identifier(`${prefix}${name}`))
   )
@@ -294,79 +320,37 @@ function buildComponentFunction(
         ])
       : t.identifier(`${prefix}props`)
 
-  // View element: createElement(View, propsArg)
-  const viewElement: t.Expression = t.callExpression(
-    t.identifier(`${prefix}createElement`),
-    [t.identifier(`${prefix}View`), propsArg]
-  )
+  return t.callExpression(t.identifier(`${prefix}createElement`), [
+    t.identifier(`${prefix}View`),
+    propsArg,
+  ])
+}
 
-  // When i18n exists, split into inner (hooks) + outer (boundaries)
-  // because useI18n throws Promises for Suspense — the Suspense boundary
-  // must be an ancestor component, not in the same render function.
-  if (concerns.i18n) {
-    const innerFn = t.functionDeclaration(
-      t.identifier(`${prefix}Inner`),
-      [t.identifier(`${prefix}props`)],
-      t.blockStatement([...hookStatements, t.returnStatement(viewElement)])
-    )
-
-    // Outer wraps createElement(Inner, props) with Suspense + ErrorBoundary
-    let outerElement: t.Expression = t.callExpression(
-      t.identifier(`${prefix}createElement`),
-      [t.identifier(`${prefix}Inner`), t.identifier(`${prefix}props`)]
-    )
-
-    // Suspense (always when i18n — needed for useI18n's thrown Promise)
-    const fallback = concerns.placeholder
-      ? t.callExpression(t.identifier(`${prefix}createElement`), [
-          t.identifier(`${prefix}Placeholder`),
-          t.nullLiteral(),
-        ])
-      : t.nullLiteral()
-
-    outerElement = t.callExpression(t.identifier(`${prefix}createElement`), [
-      t.identifier(`${prefix}Suspense`),
-      t.objectExpression([
-        t.objectProperty(t.identifier('fallback'), fallback),
-      ]),
-      outerElement,
-    ])
-
-    if (concerns.error) {
-      outerElement = t.callExpression(t.identifier(`${prefix}createElement`), [
-        t.identifier(`${prefix}ErrorBoundary`),
-        t.objectExpression([
-          t.objectProperty(
-            t.identifier('FallbackComponent'),
-            t.identifier(`${prefix}ErrorFallback`)
-          ),
-        ]),
-        outerElement,
+function buildSuspenseFallback(
+  prefix: string,
+  concerns: ConcernPaths
+): t.Expression {
+  return concerns.placeholder
+    ? t.callExpression(t.identifier(`${prefix}createElement`), [
+        t.identifier(`${prefix}Placeholder`),
+        t.nullLiteral(),
       ])
-    }
+    : t.nullLiteral()
+}
 
-    const outerFn = t.functionDeclaration(
-      t.identifier(`Nojoy${displayName}`),
-      [t.identifier(`${prefix}props`)],
-      t.blockStatement([t.returnStatement(outerElement)])
-    )
-
-    return [innerFn, outerFn]
-  }
-
-  // No i18n — single function with inline wrapping
-  let element: t.Expression = viewElement
-
-  if (concerns.placeholder) {
+function wrapWithBoundaries(
+  prefix: string,
+  element: t.Expression,
+  concerns: ConcernPaths,
+  needsSuspense: boolean
+): t.Expression {
+  if (needsSuspense) {
     element = t.callExpression(t.identifier(`${prefix}createElement`), [
       t.identifier(`${prefix}Suspense`),
       t.objectExpression([
         t.objectProperty(
           t.identifier('fallback'),
-          t.callExpression(t.identifier(`${prefix}createElement`), [
-            t.identifier(`${prefix}Placeholder`),
-            t.nullLiteral(),
-          ])
+          buildSuspenseFallback(prefix, concerns)
         ),
       ]),
       element,
@@ -386,6 +370,139 @@ function buildComponentFunction(
     ])
   }
 
+  return element
+}
+
+function buildStyledDeclaration(
+  prefix: string,
+  targetIdentifier: string,
+  componentName: string,
+  skins: Record<string, string>
+): t.VariableDeclaration {
+  const elementName = buildElementName(componentName)
+  const skinEntries = Object.entries(skins).map(([name, path]) =>
+    t.objectProperty(
+      t.identifier(name),
+      t.arrowFunctionExpression(
+        [],
+        t.callExpression(t.import(), [t.stringLiteral(path)])
+      )
+    )
+  )
+
+  return t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.identifier(`${prefix}Styled`),
+      t.callExpression(t.identifier(`${prefix}styled`), [
+        t.identifier(targetIdentifier),
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier('name'),
+            t.stringLiteral(elementName)
+          ),
+          t.objectProperty(
+            t.identifier('skins'),
+            t.objectExpression(skinEntries)
+          ),
+          t.objectProperty(
+            t.identifier('suspendable'),
+            t.booleanLiteral(true)
+          ),
+        ]),
+      ])
+    ),
+  ])
+}
+
+function buildComponentFunction(
+  prefix: string,
+  displayName: string,
+  asyncExports: string[],
+  concerns: ConcernPaths,
+  componentName: string
+): t.Statement[] {
+  const hookStatements = buildHookStatements(prefix, asyncExports, concerns)
+  const viewElement = buildViewElement(prefix, asyncExports, concerns)
+  const hasHooks = hookStatements.length > 0
+  const hasSkins = concerns.skins && Object.keys(concerns.skins).length > 0
+
+  // --- Skins path: Core (hooks+View) → styled() → outer (boundaries) ---
+  if (hasSkins) {
+    const statements: t.Statement[] = []
+
+    // 1. Core function (only if hooks exist, otherwise styled wraps View directly)
+    let styledTarget: string
+    if (hasHooks) {
+      statements.push(
+        t.functionDeclaration(
+          t.identifier(`${prefix}Core`),
+          [t.identifier(`${prefix}props`)],
+          t.blockStatement([...hookStatements, t.returnStatement(viewElement)])
+        )
+      )
+      styledTarget = `${prefix}Core`
+    } else {
+      styledTarget = `${prefix}View`
+    }
+
+    // 2. styled() declaration
+    statements.push(
+      buildStyledDeclaration(prefix, styledTarget, componentName, concerns.skins!)
+    )
+
+    // 3. Outer wrapper: createElement(Styled, props) + boundaries
+    let outerElement: t.Expression = t.callExpression(
+      t.identifier(`${prefix}createElement`),
+      [t.identifier(`${prefix}Styled`), t.identifier(`${prefix}props`)]
+    )
+
+    // Suspense always needed with skins (suspendable: true uses React.use())
+    outerElement = wrapWithBoundaries(prefix, outerElement, concerns, true)
+
+    statements.push(
+      t.functionDeclaration(
+        t.identifier(`Nojoy${displayName}`),
+        [t.identifier(`${prefix}props`)],
+        t.blockStatement([t.returnStatement(outerElement)])
+      )
+    )
+
+    return statements
+  }
+
+  // --- i18n path (no skins): inner (hooks) + outer (boundaries) ---
+  if (concerns.i18n) {
+    const innerFn = t.functionDeclaration(
+      t.identifier(`${prefix}Inner`),
+      [t.identifier(`${prefix}props`)],
+      t.blockStatement([...hookStatements, t.returnStatement(viewElement)])
+    )
+
+    let outerElement: t.Expression = t.callExpression(
+      t.identifier(`${prefix}createElement`),
+      [t.identifier(`${prefix}Inner`), t.identifier(`${prefix}props`)]
+    )
+
+    // Suspense always needed for i18n (useI18n throws Promise)
+    outerElement = wrapWithBoundaries(prefix, outerElement, concerns, true)
+
+    const outerFn = t.functionDeclaration(
+      t.identifier(`Nojoy${displayName}`),
+      [t.identifier(`${prefix}props`)],
+      t.blockStatement([t.returnStatement(outerElement)])
+    )
+
+    return [innerFn, outerFn]
+  }
+
+  // --- Default path (no skins, no i18n): single function ---
+  const element = wrapWithBoundaries(
+    prefix,
+    viewElement,
+    concerns,
+    !!concerns.placeholder
+  )
+
   return [
     t.functionDeclaration(
       t.identifier(`Nojoy${displayName}`),
@@ -401,11 +518,16 @@ export function generateComponentWrapper(
   root: string,
   srcDir: string = root
 ): string {
+  const skins =
+    component.skins && Object.keys(component.skins).length > 0
+      ? component.skins
+      : undefined
   const concerns: ConcernPaths = {
     async: component.concerns['async'],
     placeholder: component.concerns['placeholder'],
     error: component.concerns['error'],
     i18n: component.concerns['i18n'],
+    skins,
   }
   const asyncExports = concerns.async ? extractExportNames(concerns.async) : []
   const displayName = buildDisplayName(component.name)
@@ -419,7 +541,8 @@ export function generateComponentWrapper(
     prefix,
     displayName,
     asyncExports,
-    concerns
+    concerns,
+    component.name
   )
 
   // Nojoy<Name>.displayName = '<Name>'

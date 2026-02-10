@@ -69,6 +69,7 @@ describe('scan', () => {
         'with-error-dir',
         'with-i18n',
         'with-placeholder',
+        'with-skins',
       ])
     })
 
@@ -125,6 +126,30 @@ describe('scan', () => {
       expect(comp?.concerns['error']).toContain(
         'components/with-error-dir/error/index.tsx'
       )
+    })
+
+    it('discovers skins directory', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-skins')
+
+      expect(comp).toBeDefined()
+      expect(comp?.skins).toBeDefined()
+      expect(Object.keys(comp!.skins).sort()).toEqual(['brutalist', 'material'])
+      expect(comp!.skins['material']).toContain(
+        'components/with-skins/skins/material.ts'
+      )
+      expect(comp!.skins['brutalist']).toContain(
+        'components/with-skins/skins/brutalist.ts'
+      )
+    })
+
+    it('registers component with only skins as framework-managed', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-skins')
+
+      expect(comp).toBeDefined()
+      expect(Object.keys(comp!.concerns)).toHaveLength(0)
+      expect(Object.keys(comp!.skins)).toHaveLength(2)
     })
 
     it('discovers i18n concern', () => {
