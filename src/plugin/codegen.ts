@@ -196,8 +196,8 @@ function buildI18nDeclarations(
     ])
   )
 
-  // const _x$i18nTranslations = import.meta.glob("/src/components/button/i18n/*.json")
-  // Pattern must be project-root-relative (leading /) for Vite's import.meta.glob
+  // const _x$i18nTranslations = import.meta.glob("/.../i18n/*.json", { query: "?url", import: "default", eager: true })
+  // Produces { path: assetUrl } — raw JSON files served as static assets, fetched via fetch()
   const rootRelative = relative(root, component.dir).split(sep).join('/')
   const globPattern = `/${rootRelative}/i18n/*.json`
   statements.push(
@@ -209,7 +209,17 @@ function buildI18nDeclarations(
             t.metaProperty(t.identifier('import'), t.identifier('meta')),
             t.identifier('glob')
           ),
-          [t.stringLiteral(globPattern)]
+          [
+            t.stringLiteral(globPattern),
+            t.objectExpression([
+              t.objectProperty(t.identifier('query'), t.stringLiteral('?url')),
+              t.objectProperty(
+                t.stringLiteral('import'),
+                t.stringLiteral('default')
+              ),
+              t.objectProperty(t.identifier('eager'), t.booleanLiteral(true)),
+            ]),
+          ]
         )
       ),
     ])

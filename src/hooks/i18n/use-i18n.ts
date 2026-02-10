@@ -4,8 +4,9 @@ import { useIntl } from 'react-intl'
 import { flatten, unflatten } from './flatten'
 
 type NestedMessages = { [key: string]: string | NestedMessages }
-type TranslationLoader = () => Promise<{ default: Record<string, string> }>
-type TranslationMap = Record<string, TranslationLoader>
+
+// path → asset URL (from import.meta.glob with ?url)
+type TranslationMap = Record<string, string>
 
 // Module-level cache: locale+namespace → resolved flat messages
 const translationCache = new Map<string, Record<string, string>>()
@@ -13,11 +14,11 @@ const translationCache = new Map<string, Record<string, string>>()
 // Module-level pending promises for Suspense integration
 const pendingLoads = new Map<string, Promise<void>>()
 
-function resolveLocaleLoader(
+function resolveLocaleUrl(
   translations: TranslationMap,
   locale: string
-): TranslationLoader | undefined {
-  // Try exact match first (e.g., "./i18n/pt-BR.json")
+): string | undefined {
+  // Try exact match first (e.g., "/src/.../i18n/pt-BR.json" → url)
   for (const key of Object.keys(translations)) {
     if (key.endsWith(`/${locale}.json`)) {
       return translations[key]
@@ -47,18 +48,19 @@ export function useI18n<T extends NestedMessages>(
 
   // Load translations for current locale (Suspense integration)
   const cacheKey = `${locale}:${namespace}`
-  const loader = resolveLocaleLoader(translations, locale)
+  const url = resolveLocaleUrl(translations, locale)
 
-  if (loader && !translationCache.has(cacheKey)) {
+  if (url && !translationCache.has(cacheKey)) {
     // Check if already loading
     const pending = pendingLoads.get(cacheKey)
     if (pending) {
       throw pending
     }
-    // Start loading and throw for Suspense
-    const promise = loader()
-      .then((mod) => {
-        translationCache.set(cacheKey, mod.default)
+    // Fetch raw JSON and throw for Suspense
+    const promise = fetch(url)
+      .then((res) => res.json() as Promise<Record<string, string>>)
+      .then((json) => {
+        translationCache.set(cacheKey, json)
         pendingLoads.delete(cacheKey)
       })
       .catch(() => {

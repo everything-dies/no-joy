@@ -46,6 +46,19 @@ export function nojoyPlugin(options: NojoyPluginOptions = {}): Plugin {
     name: 'nojoy',
     enforce: 'pre',
 
+    config() {
+      // Prevent Vite from inlining JSON translation files as base64 data URIs
+      // so they are emitted as separate .json assets fetched via fetch()
+      return {
+        build: {
+          assetsInlineLimit(filePath: string) {
+            if (filePath.endsWith('.json')) return false
+            return undefined
+          },
+        },
+      }
+    },
+
     configResolved(config) {
       resolvedRoot = config.root
       resolvedSrcDir = options.srcDir
