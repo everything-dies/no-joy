@@ -84,6 +84,12 @@ export function useI18n<T extends NestedMessages>(
     }
     const merged = { ...defaults, ...localeOverrides }
 
+    // No translations loaded — return defaults directly to avoid
+    // react-intl MissingTranslationError for locales without a JSON file
+    if (Object.keys(localeOverrides).length === 0) {
+      return unflatten(merged)
+    }
+
     const formatted: Record<string, string> = {}
     for (const key of Object.keys(merged)) {
       const id = `${namespace}/${key}`
