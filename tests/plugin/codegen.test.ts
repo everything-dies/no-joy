@@ -512,9 +512,7 @@ describe('generateComponentWrapper', () => {
 
       const code = generateComponentWrapper(component, P, FIXTURES)
 
-      expect(code).toContain(
-        `const ${P}Styled = ${P}styled(${P}View`
-      )
+      expect(code).toContain(`const ${P}Styled = ${P}styled(${P}View`)
       expect(code).toContain(`name: "nojoy-with-skins"`)
       expect(code).toContain(`suspendable: true`)
     })

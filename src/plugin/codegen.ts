@@ -396,18 +396,12 @@ function buildStyledDeclaration(
       t.callExpression(t.identifier(`${prefix}styled`), [
         t.identifier(targetIdentifier),
         t.objectExpression([
-          t.objectProperty(
-            t.identifier('name'),
-            t.stringLiteral(elementName)
-          ),
+          t.objectProperty(t.identifier('name'), t.stringLiteral(elementName)),
           t.objectProperty(
             t.identifier('skins'),
             t.objectExpression(skinEntries)
           ),
-          t.objectProperty(
-            t.identifier('suspendable'),
-            t.booleanLiteral(true)
-          ),
+          t.objectProperty(t.identifier('suspendable'), t.booleanLiteral(true)),
         ]),
       ])
     ),
@@ -447,7 +441,12 @@ function buildComponentFunction(
 
     // 2. styled() declaration
     statements.push(
-      buildStyledDeclaration(prefix, styledTarget, componentName, concerns.skins!)
+      buildStyledDeclaration(
+        prefix,
+        styledTarget,
+        componentName,
+        concerns.skins!
+      )
     )
 
     // 3. Outer wrapper: createElement(Styled, props) + boundaries
