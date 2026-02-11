@@ -28,3 +28,4 @@ export {
   type AsyncHandler,
   type DataPlane,
 } from './hooks/async-handler'
+export { useRouteLoader } from './hooks/route-loader'

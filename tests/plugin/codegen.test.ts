@@ -32,6 +32,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -55,6 +56,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -77,6 +79,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -102,6 +105,7 @@ describe('generateComponentWrapper', () => {
           ),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -124,6 +128,7 @@ describe('generateComponentWrapper', () => {
           ),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -146,6 +151,7 @@ describe('generateComponentWrapper', () => {
           ),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -165,6 +171,7 @@ describe('generateComponentWrapper', () => {
           error: resolve(FIXTURES, 'components/with-error/error.tsx'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -186,6 +193,7 @@ describe('generateComponentWrapper', () => {
           error: resolve(FIXTURES, 'components/with-error/error.tsx'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -207,6 +215,7 @@ describe('generateComponentWrapper', () => {
           error: resolve(FIXTURES, 'components/full/error.tsx'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -237,6 +246,7 @@ describe('generateComponentWrapper', () => {
           error: resolve(FIXTURES, 'components/full/error.tsx'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -258,6 +268,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -279,6 +290,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -297,6 +309,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -316,6 +329,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -334,6 +348,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/button/i18n.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -354,6 +369,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -377,6 +393,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -399,6 +416,7 @@ describe('generateComponentWrapper', () => {
           ),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -422,6 +440,7 @@ describe('generateComponentWrapper', () => {
           async: resolve(FIXTURES, 'components/widgets/card/async.ts'),
         },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -437,6 +456,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -453,6 +473,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/plain/index.tsx'),
         concerns: {},
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -478,6 +499,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(SKINS_DIR, 'index.tsx'),
         concerns: {},
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -494,6 +516,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(SKINS_DIR, 'index.tsx'),
         concerns: {},
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -508,6 +531,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(SKINS_DIR, 'index.tsx'),
         concerns: {},
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -524,6 +548,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(SKINS_DIR, 'index.tsx'),
         concerns: {},
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -539,6 +564,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(SKINS_DIR, 'index.tsx'),
         concerns: {},
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -556,6 +582,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -580,6 +607,7 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/widgets/card/index.tsx'),
         concerns: {},
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -596,6 +624,7 @@ describe('generateComponentWrapper', () => {
           i18n: resolve(FIXTURES, 'components/with-i18n/i18n.ts'),
         },
         skins: SKINS,
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
@@ -620,12 +649,174 @@ describe('generateComponentWrapper', () => {
         viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
         concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
         skins: {},
+        routes: [],
       }
 
       const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).not.toContain('styled')
       expect(code).not.toContain('Styled')
+    })
+  })
+
+  describe('routes concern', () => {
+    const ROUTES_DIR = resolve(FIXTURES, 'components/with-routes')
+
+    function makeRouteComponent(): ComponentEntry {
+      return {
+        name: 'with-routes',
+        dir: ROUTES_DIR,
+        viewPath: resolve(ROUTES_DIR, 'index.tsx'),
+        concerns: {},
+        skins: {},
+        routes: [
+          {
+            segment: 'about',
+            path: 'about',
+            dir: resolve(ROUTES_DIR, '[routes]/[about]'),
+            viewPath: resolve(ROUTES_DIR, '[routes]/[about]/index.tsx'),
+            asyncPath: undefined,
+            metaPath: undefined,
+            children: [],
+          },
+          {
+            segment: 'posts',
+            path: 'posts',
+            dir: resolve(ROUTES_DIR, '[routes]/[posts]'),
+            viewPath: resolve(ROUTES_DIR, '[routes]/[posts]/index.tsx'),
+            asyncPath: resolve(ROUTES_DIR, '[routes]/[posts]/async.ts'),
+            metaPath: resolve(ROUTES_DIR, '[routes]/[posts]/meta.ts'),
+            children: [
+              {
+                segment: '@id',
+                path: ':id',
+                dir: resolve(ROUTES_DIR, '[routes]/[posts]/[@id]'),
+                viewPath: resolve(
+                  ROUTES_DIR,
+                  '[routes]/[posts]/[@id]/index.tsx'
+                ),
+                asyncPath: undefined,
+                metaPath: undefined,
+                children: [],
+              },
+            ],
+          },
+          {
+            segment: '...',
+            path: '*',
+            dir: resolve(ROUTES_DIR, '[routes]/[...]'),
+            viewPath: resolve(ROUTES_DIR, '[routes]/[...]/index.tsx'),
+            asyncPath: undefined,
+            metaPath: undefined,
+            children: [],
+          },
+        ],
+      }
+    }
+
+    it('imports Routes and Route from react-router', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      expect(code).toContain(
+        `import { Routes as ${P}Routes, Route as ${P}Route } from "react-router"`
+      )
+    })
+
+    it('imports useRouteLoader when routes have loaders', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      expect(code).toContain(
+        `import { useRouteLoader as ${P}useRouteLoader } from "nojoy/runtime"`
+      )
+    })
+
+    it('imports useNojoy when routes have loaders', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      expect(code).toContain(
+        `import { useNojoy as ${P}useNojoy } from "nojoy/runtime"`
+      )
+    })
+
+    it('lazy-loads route view components', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      // Static route (no loader) — direct lazy reference
+      expect(code).toContain(`const ${P}R_about = ${P}lazy`)
+      // Route with loader — view gets _View suffix
+      expect(code).toContain(`const ${P}R_posts_View = ${P}lazy`)
+      // Nested route
+      expect(code).toContain(`const ${P}R_posts_id = ${P}lazy`)
+      // Catch-all route
+      expect(code).toContain(`const ${P}R_splat = ${P}lazy`)
+    })
+
+    it('imports route loader as default import', () => {
+      const component = makeRouteComponent()
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(
+        `import ${P}R_posts_loader from "${component.routes[1]!.asyncPath}"`
+      )
+    })
+
+    it('imports route meta as namespace import', () => {
+      const component = makeRouteComponent()
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).toContain(
+        `import * as ${P}R_posts_meta from "${component.routes[1]!.metaPath}"`
+      )
+    })
+
+    it('generates wrapper function for routes with loaders', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      expect(code).toContain(`function ${P}R_posts(${P}props)`)
+      expect(code).toContain(`${P}useNojoy()`)
+      expect(code).toContain(
+        `${P}useRouteLoader(${P}R_posts_loader, ${P}dataPlane)`
+      )
+      expect(code).toContain(`load: ${P}load`)
+    })
+
+    it('uses meta.route with fallback in path expression', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      expect(code).toContain(`${P}R_posts_meta.route ?? "posts"`)
+    })
+
+    it('uses literal path for routes without meta', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      expect(code).toContain(`path: "about"`)
+      expect(code).toContain(`path: ":id"`)
+      expect(code).toContain(`path: "*"`)
+    })
+
+    it('builds nested Routes element and passes as routes prop', () => {
+      const code = generateComponentWrapper(makeRouteComponent(), P, FIXTURES)
+
+      expect(code).toContain(`${P}createElement(${P}Routes, null`)
+      expect(code).toContain(`${P}createElement(${P}Route,`)
+      expect(code).toContain(`routes: ${P}routes`)
+    })
+
+    it('does not import react-router when no routes', () => {
+      const component: ComponentEntry = {
+        name: 'button',
+        dir: resolve(FIXTURES, 'components/button'),
+        viewPath: resolve(FIXTURES, 'components/button/index.tsx'),
+        concerns: { async: resolve(FIXTURES, 'components/button/async.ts') },
+        skins: {},
+        routes: [],
+      }
+
+      const code = generateComponentWrapper(component, P, FIXTURES)
+
+      expect(code).not.toContain('react-router')
+      expect(code).not.toContain('Routes')
+      expect(code).not.toContain('Route')
     })
   })
 })

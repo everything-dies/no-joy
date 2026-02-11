@@ -1,12 +1,23 @@
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
+export interface RouteEntry {
+  segment: string
+  path: string
+  dir: string
+  viewPath: string | undefined
+  asyncPath: string | undefined
+  metaPath: string | undefined
+  children: RouteEntry[]
+}
+
 export interface ComponentEntry {
   name: string
   dir: string
   viewPath: string
   concerns: Record<string, string>
   skins: Record<string, string>
+  routes: RouteEntry[]
 }
 
 export interface ClientEntry {
@@ -121,6 +132,50 @@ function scanSkins(componentDir: string): Record<string, string> {
   return skins
 }
 
+function isRouteDir(name: string): boolean {
+  return name.startsWith('[') && name.endsWith(']')
+}
+
+export function resolveRoutePath(segment: string): string {
+  if (segment === '...') return '*'
+  if (segment.startsWith('@')) {
+    const param = segment.slice(1)
+    return `:${param}`
+  }
+  return segment
+}
+
+function scanRoutes(routesDir: string): RouteEntry[] {
+  if (!existsSync(routesDir) || !statSync(routesDir).isDirectory()) return []
+
+  const entries: RouteEntry[] = []
+
+  for (const name of readdirSync(routesDir)) {
+    if (!isRouteDir(name)) continue
+    const dirPath = join(routesDir, name)
+    if (!statSync(dirPath).isDirectory()) continue
+
+    const segment = name.slice(1, -1)
+    const path = resolveRoutePath(segment)
+    const viewPath = findFile(dirPath, 'index', VIEW_EXTENSIONS)
+    const asyncPath = findFile(dirPath, 'async', ENTRY_EXTENSIONS)
+    const metaPath = findFile(dirPath, 'meta', ENTRY_EXTENSIONS)
+    const children = scanRoutes(dirPath)
+
+    entries.push({
+      segment,
+      path,
+      dir: dirPath,
+      viewPath,
+      asyncPath,
+      metaPath,
+      children,
+    })
+  }
+
+  return entries
+}
+
 function scanComponents(
   componentsDir: string,
   basePath: string = componentsDir
@@ -130,6 +185,8 @@ function scanComponents(
   const entries: ComponentEntry[] = []
 
   for (const name of readdirSync(componentsDir)) {
+    // Skip bracketed directories (route directories)
+    if (isRouteDir(name)) continue
     const dirPath = join(componentsDir, name)
     if (!statSync(dirPath).isDirectory()) continue
 
@@ -157,8 +214,15 @@ function scanComponents(
       // Scan for skins directory
       const skins = scanSkins(dirPath)
 
-      // Only register as a framework component if it has concern files or skins
-      if (Object.keys(concerns).length > 0 || Object.keys(skins).length > 0) {
+      // Scan for routes directory
+      const routes = scanRoutes(join(dirPath, '[routes]'))
+
+      // Only register as a framework component if it has concern files, skins, or routes
+      if (
+        Object.keys(concerns).length > 0 ||
+        Object.keys(skins).length > 0 ||
+        routes.length > 0
+      ) {
         const componentName = relative(basePath, dirPath).split(sep).join('/')
         entries.push({
           name: componentName,
@@ -166,6 +230,7 @@ function scanComponents(
           viewPath,
           concerns,
           skins,
+          routes,
         })
       }
     }

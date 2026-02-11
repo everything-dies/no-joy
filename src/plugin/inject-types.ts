@@ -38,12 +38,21 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
     return !!base && VIEW_BASENAMES.has(base)
   }
 
+  function hasRoutesDir(dir: string): boolean {
+    const routesDir = join(dir, '[routes]')
+    return tsModule.sys.directoryExists(routesDir)
+  }
+
   function isComponentView(fileName: string): boolean {
     const base = fileName.replace(/\\/g, '/').split('/').pop()
     if (!base || !VIEW_BASENAMES.has(base)) return false
 
     const dir = dirname(fileName)
-    return !!findConcern(dir, 'async') || !!findConcern(dir, 'i18n')
+    return (
+      !!findConcern(dir, 'async') ||
+      !!findConcern(dir, 'i18n') ||
+      hasRoutesDir(dir)
+    )
   }
 
   function hasExportModifier(node: ts.Node): boolean {
@@ -98,8 +107,9 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
   function buildTypeAnnotation(dir: string): string | undefined {
     const asyncPath = findConcern(dir, 'async')
     const i18nPath = findConcern(dir, 'i18n')
+    const hasRoutes = hasRoutesDir(dir)
 
-    if (!asyncPath && !i18nPath) return undefined
+    if (!asyncPath && !i18nPath && !hasRoutes) return undefined
 
     const props: string[] = []
 
@@ -116,6 +126,10 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
 
     if (i18nPath) {
       props.push(`i18n: ReturnType<typeof import('./i18n').default>`)
+    }
+
+    if (hasRoutes) {
+      props.push(`routes: import('react').ReactElement`)
     }
 
     if (props.length === 0) return undefined

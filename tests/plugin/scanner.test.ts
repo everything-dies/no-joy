@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { scan } from '../../src/plugin/scanner'
+import { resolveRoutePath, scan } from '../../src/plugin/scanner'
 
 const FIXTURES = resolve(__dirname, 'fixtures')
 const BASIC = resolve(FIXTURES, 'basic')
@@ -69,6 +69,7 @@ describe('scan', () => {
         'with-error-dir',
         'with-i18n',
         'with-placeholder',
+        'with-routes',
         'with-skins',
       ])
     })
@@ -172,9 +173,87 @@ describe('scan', () => {
       expect(comp?.concerns['error']).toContain('components/full/error.tsx')
     })
 
+    it('discovers routes directory and builds route tree', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-routes')
+
+      expect(comp).toBeDefined()
+      expect(comp!.routes).toHaveLength(3)
+
+      const segments = comp!.routes.map((r) => r.segment).sort()
+      expect(segments).toEqual(['...', 'about', 'posts'])
+    })
+
+    it('resolves nested route structure', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-routes')!
+      const posts = comp.routes.find((r) => r.segment === 'posts')
+
+      expect(posts).toBeDefined()
+      expect(posts!.children).toHaveLength(1)
+      expect(posts!.children[0]!.segment).toBe('@id')
+      expect(posts!.children[0]!.path).toBe(':id')
+    })
+
+    it('detects route async and meta files', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-routes')!
+      const posts = comp.routes.find((r) => r.segment === 'posts')
+
+      expect(posts!.asyncPath).toContain('async.ts')
+      expect(posts!.metaPath).toContain('meta.ts')
+    })
+
+    it('detects route view files', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-routes')!
+      const about = comp.routes.find((r) => r.segment === 'about')
+
+      expect(about!.viewPath).toContain('index.tsx')
+      expect(about!.asyncPath).toBeUndefined()
+      expect(about!.metaPath).toBeUndefined()
+    })
+
+    it('resolves catch-all route', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-routes')!
+      const splat = comp.routes.find((r) => r.segment === '...')
+
+      expect(splat).toBeDefined()
+      expect(splat!.path).toBe('*')
+    })
+
+    it('registers component with only routes as framework-managed', () => {
+      const result = scan(BASIC)
+      const comp = result.components.find((c) => c.name === 'with-routes')
+
+      expect(comp).toBeDefined()
+      expect(Object.keys(comp!.concerns)).toHaveLength(0)
+      expect(Object.keys(comp!.skins)).toHaveLength(0)
+      expect(comp!.routes.length).toBeGreaterThan(0)
+    })
+
     it('returns empty array when components dir missing', () => {
       const result = scan(EMPTY)
       expect(result.components).toEqual([])
+    })
+  })
+
+  describe('resolveRoutePath', () => {
+    it('resolves static segments', () => {
+      expect(resolveRoutePath('about-us')).toBe('about-us')
+    })
+
+    it('resolves dynamic params', () => {
+      expect(resolveRoutePath('@id')).toBe(':id')
+    })
+
+    it('resolves optional dynamic params', () => {
+      expect(resolveRoutePath('@id?')).toBe(':id?')
+    })
+
+    it('resolves catch-all', () => {
+      expect(resolveRoutePath('...')).toBe('*')
     })
   })
 

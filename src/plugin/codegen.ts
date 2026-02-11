@@ -3,7 +3,7 @@ import * as t from '@babel/types'
 import { relative, sep } from 'node:path'
 
 import { extractExportNames } from './exports'
-import { type ComponentEntry } from './scanner'
+import { type ComponentEntry, type RouteEntry } from './scanner'
 
 // Handle CJS/ESM interop for @babel/generator
 const generate =
@@ -35,10 +35,51 @@ interface ConcernPaths {
   error: string | undefined
   i18n: string | undefined
   skins: Record<string, string> | undefined
+  routes: RouteEntry[]
 }
 
 function buildElementName(componentName: string): string {
   return `nojoy-${componentName.replace(/\//g, '-')}`
+}
+
+// --- Route helpers ---
+
+interface RouteNode {
+  route: RouteEntry
+  idParts: string[]
+}
+
+function routeIdentifierPart(segment: string): string {
+  if (segment === '...') return 'splat'
+  return segment
+    .replace(/^@/, '')
+    .replace(/\?$/, '')
+    .replace(/[^a-zA-Z0-9]/g, '_')
+}
+
+function collectRouteNodes(
+  routes: RouteEntry[],
+  parentParts: string[] = []
+): RouteNode[] {
+  const nodes: RouteNode[] = []
+  for (const route of routes) {
+    const idParts = [...parentParts, routeIdentifierPart(route.segment)]
+    nodes.push({ route, idParts })
+    nodes.push(...collectRouteNodes(route.children, idParts))
+  }
+  return nodes
+}
+
+function routeTreeHasLoader(routes: RouteEntry[]): boolean {
+  for (const route of routes) {
+    if (route.asyncPath) return true
+    if (routeTreeHasLoader(route.children)) return true
+  }
+  return false
+}
+
+function routeId(prefix: string, idParts: string[]): string {
+  return `${prefix}R_${idParts.join('_')}`
 }
 
 function buildImports(
@@ -69,8 +110,9 @@ function buildImports(
     t.importDeclaration(reactSpecifiers, t.stringLiteral('react'))
   )
 
-  // nojoy/runtime imports (only if async exports exist)
-  if (asyncExports.length > 0) {
+  // nojoy/runtime imports
+  const hasRouteLoaders = routeTreeHasLoader(concerns.routes)
+  if (asyncExports.length > 0 || hasRouteLoaders) {
     statements.push(
       t.importDeclaration(
         [
@@ -82,12 +124,27 @@ function buildImports(
         t.stringLiteral('nojoy/runtime')
       )
     )
+  }
+  if (asyncExports.length > 0) {
     statements.push(
       t.importDeclaration(
         [
           t.importSpecifier(
             t.identifier(`${prefix}useAsyncHandler`),
             t.identifier('useAsyncHandler')
+          ),
+        ],
+        t.stringLiteral('nojoy/runtime')
+      )
+    )
+  }
+  if (hasRouteLoaders) {
+    statements.push(
+      t.importDeclaration(
+        [
+          t.importSpecifier(
+            t.identifier(`${prefix}useRouteLoader`),
+            t.identifier('useRouteLoader')
           ),
         ],
         t.stringLiteral('nojoy/runtime')
@@ -172,6 +229,46 @@ function buildImports(
         t.stringLiteral(concerns.async)
       )
     )
+  }
+
+  // Route imports (react-router + per-route loaders & meta)
+  if (concerns.routes.length > 0) {
+    statements.push(
+      t.importDeclaration(
+        [
+          t.importSpecifier(
+            t.identifier(`${prefix}Routes`),
+            t.identifier('Routes')
+          ),
+          t.importSpecifier(
+            t.identifier(`${prefix}Route`),
+            t.identifier('Route')
+          ),
+        ],
+        t.stringLiteral('react-router')
+      )
+    )
+
+    const allNodes = collectRouteNodes(concerns.routes)
+    for (const { route, idParts } of allNodes) {
+      const id = routeId(prefix, idParts)
+      if (route.asyncPath) {
+        statements.push(
+          t.importDeclaration(
+            [t.importDefaultSpecifier(t.identifier(`${id}_loader`))],
+            t.stringLiteral(route.asyncPath)
+          )
+        )
+      }
+      if (route.metaPath) {
+        statements.push(
+          t.importDeclaration(
+            [t.importNamespaceSpecifier(t.identifier(`${id}_meta`))],
+            t.stringLiteral(route.metaPath)
+          )
+        )
+      }
+    }
   }
 
   // View: const _x$View = _x$lazy(() => import("viewPath"))
@@ -311,6 +408,11 @@ function buildViewElement(
       t.objectProperty(t.identifier('i18n'), t.identifier(`${prefix}i18n`))
     )
   }
+  if (concerns.routes.length > 0) {
+    concernProps.push(
+      t.objectProperty(t.identifier('routes'), t.identifier(`${prefix}routes`))
+    )
+  }
 
   const propsArg =
     concernProps.length > 0
@@ -408,6 +510,137 @@ function buildStyledDeclaration(
   ])
 }
 
+function buildRouteDeclarations(
+  prefix: string,
+  routes: RouteEntry[]
+): t.Statement[] {
+  const statements: t.Statement[] = []
+  const allNodes = collectRouteNodes(routes)
+
+  for (const { route, idParts } of allNodes) {
+    if (!route.viewPath) continue
+    const id = routeId(prefix, idParts)
+
+    // Lazy view: const _x$R_posts_View = _x$lazy(() => import("..."))
+    // If the route has a loader, the view gets _View suffix (wrapper takes base name)
+    const viewId = route.asyncPath ? `${id}_View` : id
+    statements.push(
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier(viewId),
+          t.callExpression(t.identifier(`${prefix}lazy`), [
+            t.arrowFunctionExpression(
+              [],
+              t.callExpression(t.import(), [t.stringLiteral(route.viewPath)])
+            ),
+          ])
+        ),
+      ])
+    )
+
+    // Wrapper function for routes with loaders
+    if (route.asyncPath) {
+      statements.push(
+        t.functionDeclaration(
+          t.identifier(id),
+          [t.identifier(`${prefix}props`)],
+          t.blockStatement([
+            t.variableDeclaration('const', [
+              t.variableDeclarator(
+                t.identifier(`${prefix}dataPlane`),
+                t.callExpression(t.identifier(`${prefix}useNojoy`), [])
+              ),
+            ]),
+            t.variableDeclaration('const', [
+              t.variableDeclarator(
+                t.identifier(`${prefix}load`),
+                t.callExpression(t.identifier(`${prefix}useRouteLoader`), [
+                  t.identifier(`${id}_loader`),
+                  t.identifier(`${prefix}dataPlane`),
+                ])
+              ),
+            ]),
+            t.returnStatement(
+              t.callExpression(t.identifier(`${prefix}createElement`), [
+                t.identifier(`${id}_View`),
+                t.objectExpression([
+                  t.spreadElement(t.identifier(`${prefix}props`)),
+                  t.objectProperty(
+                    t.identifier('load'),
+                    t.identifier(`${prefix}load`)
+                  ),
+                ]),
+              ])
+            ),
+          ])
+        )
+      )
+    }
+  }
+
+  return statements
+}
+
+function buildRouteElement(
+  prefix: string,
+  route: RouteEntry,
+  idParts: string[]
+): t.Expression {
+  const id = routeId(prefix, idParts)
+
+  // Path: meta.route ?? "derivedPath"
+  const pathExpr = route.metaPath
+    ? t.logicalExpression(
+        '??',
+        t.memberExpression(t.identifier(`${id}_meta`), t.identifier('route')),
+        t.stringLiteral(route.path)
+      )
+    : t.stringLiteral(route.path)
+
+  const routeProps: t.ObjectProperty[] = [
+    t.objectProperty(t.identifier('path'), pathExpr),
+  ]
+
+  if (route.viewPath) {
+    routeProps.push(
+      t.objectProperty(
+        t.identifier('element'),
+        t.callExpression(t.identifier(`${prefix}createElement`), [
+          t.identifier(id),
+          t.nullLiteral(),
+        ])
+      )
+    )
+  }
+
+  const childElements = route.children.map((child) => {
+    const childIdParts = [...idParts, routeIdentifierPart(child.segment)]
+    return buildRouteElement(prefix, child, childIdParts)
+  })
+
+  return t.callExpression(t.identifier(`${prefix}createElement`), [
+    t.identifier(`${prefix}Route`),
+    t.objectExpression(routeProps),
+    ...childElements,
+  ])
+}
+
+function buildRoutesElement(
+  prefix: string,
+  routes: RouteEntry[]
+): t.Expression {
+  const routeElements = routes.map((route) => {
+    const idParts = [routeIdentifierPart(route.segment)]
+    return buildRouteElement(prefix, route, idParts)
+  })
+
+  return t.callExpression(t.identifier(`${prefix}createElement`), [
+    t.identifier(`${prefix}Routes`),
+    t.nullLiteral(),
+    ...routeElements,
+  ])
+}
+
 function buildComponentFunction(
   prefix: string,
   displayName: string,
@@ -419,19 +652,36 @@ function buildComponentFunction(
   const viewElement = buildViewElement(prefix, asyncExports, concerns)
   const hasHooks = hookStatements.length > 0
   const hasSkins = concerns.skins && Object.keys(concerns.skins).length > 0
+  const hasRoutes = concerns.routes.length > 0
+
+  // Routes variable declaration (if routes exist)
+  const routesStatements: t.Statement[] = hasRoutes
+    ? [
+        t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier(`${prefix}routes`),
+            buildRoutesElement(prefix, concerns.routes)
+          ),
+        ]),
+      ]
+    : []
 
   // --- Skins path: Core (hooks+View) → styled() → outer (boundaries) ---
   if (hasSkins) {
     const statements: t.Statement[] = []
 
-    // 1. Core function (only if hooks exist, otherwise styled wraps View directly)
+    // 1. Core function (only if hooks or routes exist, otherwise styled wraps View directly)
     let styledTarget: string
-    if (hasHooks) {
+    if (hasHooks || hasRoutes) {
       statements.push(
         t.functionDeclaration(
           t.identifier(`${prefix}Core`),
           [t.identifier(`${prefix}props`)],
-          t.blockStatement([...hookStatements, t.returnStatement(viewElement)])
+          t.blockStatement([
+            ...hookStatements,
+            ...routesStatements,
+            t.returnStatement(viewElement),
+          ])
         )
       )
       styledTarget = `${prefix}Core`
@@ -474,7 +724,11 @@ function buildComponentFunction(
     const innerFn = t.functionDeclaration(
       t.identifier(`${prefix}Inner`),
       [t.identifier(`${prefix}props`)],
-      t.blockStatement([...hookStatements, t.returnStatement(viewElement)])
+      t.blockStatement([
+        ...hookStatements,
+        ...routesStatements,
+        t.returnStatement(viewElement),
+      ])
     )
 
     let outerElement: t.Expression = t.callExpression(
@@ -506,7 +760,11 @@ function buildComponentFunction(
     t.functionDeclaration(
       t.identifier(`Nojoy${displayName}`),
       [t.identifier(`${prefix}props`)],
-      t.blockStatement([...hookStatements, t.returnStatement(element)])
+      t.blockStatement([
+        ...hookStatements,
+        ...routesStatements,
+        t.returnStatement(element),
+      ])
     ),
   ]
 }
@@ -527,6 +785,7 @@ export function generateComponentWrapper(
     error: component.concerns['error'],
     i18n: component.concerns['i18n'],
     skins,
+    routes: component.routes,
   }
   const asyncExports = concerns.async ? extractExportNames(concerns.async) : []
   const displayName = buildDisplayName(component.name)
@@ -536,6 +795,7 @@ export function generateComponentWrapper(
   const i18nDecls = concerns.i18n
     ? buildI18nDeclarations(prefix, component, root, srcDir)
     : []
+  const routeDecls = buildRouteDeclarations(prefix, component.routes)
   const componentStatements = buildComponentFunction(
     prefix,
     displayName,
@@ -565,6 +825,7 @@ export function generateComponentWrapper(
     ...imports,
     viewDecl,
     ...i18nDecls,
+    ...routeDecls,
     ...componentStatements,
     displayNameAssignment,
     defaultExport,
