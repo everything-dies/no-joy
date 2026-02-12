@@ -206,9 +206,10 @@ describe('nojoyPlugin', () => {
       const cardDir = join(root, 'src', 'components', 'card')
       const load = plugin.load as (id: string) => string | undefined
 
-      // Initially no placeholder
+      // Initially no placeholder — still has Suspense (all lazy components do) but no Placeholder
       let code = load(`\0nojoy:component:${cardDir}`)
-      expect(code).not.toContain('Suspense')
+      expect(code).toContain('Suspense')
+      expect(code).not.toContain('Placeholder')
 
       // Add placeholder concern
       writeFileSync(

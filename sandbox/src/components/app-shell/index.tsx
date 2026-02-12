@@ -1,10 +1,6 @@
 import { Link } from 'react-router-dom'
 
-export default function AppShell({
-  routes,
-}: {
-  routes: React.ReactElement
-}) {
+export default function AppShell({ routes }) {
   return (
     <div>
       <nav style={{ display: 'flex', gap: 12, marginBottom: 16 }}>

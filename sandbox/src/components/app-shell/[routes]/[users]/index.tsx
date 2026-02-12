@@ -1,10 +1,6 @@
 import { Link, Outlet } from 'react-router-dom'
 
-export default function Users({
-  load,
-}: {
-  load: { loading: boolean; data?: Array<{ id: number; name: string }> }
-}) {
+export default function Users({ load }) {
   if (load.loading) return <p>Loading users...</p>
 
   return (

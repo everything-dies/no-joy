@@ -38,7 +38,7 @@ describe('generateComponentWrapper', () => {
       const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).toContain(
-        `import { createElement as ${P}createElement, lazy as ${P}lazy } from "react"`
+        `import { createElement as ${P}createElement, lazy as ${P}lazy, Suspense as ${P}Suspense } from "react"`
       )
       expect(code).toContain(
         `const ${P}View = ${P}lazy(() => import("${component.viewPath}"))`
@@ -479,9 +479,10 @@ describe('generateComponentWrapper', () => {
       const code = generateComponentWrapper(component, P, FIXTURES)
 
       expect(code).not.toContain('useAsyncHandler')
-      expect(code).not.toContain('Suspense')
       expect(code).not.toContain('ErrorBoundary')
-      expect(code).toContain(`return ${P}createElement(${P}View, ${P}props)`)
+      // All framework components use React.lazy, so Suspense is always present
+      expect(code).toContain(`Suspense as ${P}Suspense`)
+      expect(code).toContain(`${P}createElement(${P}Suspense`)
     })
   })
 

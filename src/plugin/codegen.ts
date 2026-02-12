@@ -98,14 +98,13 @@ function buildImports(
     t.importSpecifier(t.identifier(`${prefix}lazy`), t.identifier('lazy')),
   ]
   const hasSkins = concerns.skins && Object.keys(concerns.skins).length > 0
-  if (concerns.placeholder || concerns.i18n || hasSkins) {
-    reactSpecifiers.push(
-      t.importSpecifier(
-        t.identifier(`${prefix}Suspense`),
-        t.identifier('Suspense')
-      )
+  // All framework components use React.lazy(), so Suspense is always needed
+  reactSpecifiers.push(
+    t.importSpecifier(
+      t.identifier(`${prefix}Suspense`),
+      t.identifier('Suspense')
     )
-  }
+  )
   statements.push(
     t.importDeclaration(reactSpecifiers, t.stringLiteral('react'))
   )
@@ -749,12 +748,7 @@ function buildComponentFunction(
   }
 
   // --- Default path (no skins, no i18n): single function ---
-  const element = wrapWithBoundaries(
-    prefix,
-    viewElement,
-    concerns,
-    !!concerns.placeholder
-  )
+  const element = wrapWithBoundaries(prefix, viewElement, concerns, true)
 
   return [
     t.functionDeclaration(

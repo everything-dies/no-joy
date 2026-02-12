@@ -43,6 +43,11 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
     return tsModule.sys.directoryExists(routesDir)
   }
 
+  function isInsideRoutesDir(dir: string): boolean {
+    const normalized = dir.replace(/\\/g, '/')
+    return normalized.includes('/[routes]/')
+  }
+
   function isComponentView(fileName: string): boolean {
     const base = fileName.replace(/\\/g, '/').split('/').pop()
     if (!base || !VIEW_BASENAMES.has(base)) return false
@@ -51,7 +56,8 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
     return (
       !!findConcern(dir, 'async') ||
       !!findConcern(dir, 'i18n') ||
-      hasRoutesDir(dir)
+      hasRoutesDir(dir) ||
+      isInsideRoutesDir(dir)
     )
   }
 
@@ -108,12 +114,22 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
     const asyncPath = findConcern(dir, 'async')
     const i18nPath = findConcern(dir, 'i18n')
     const hasRoutes = hasRoutesDir(dir)
+    const isRouteView = isInsideRoutesDir(dir)
 
-    if (!asyncPath && !i18nPath && !hasRoutes) return undefined
+    if (!asyncPath && !i18nPath && !hasRoutes && !isRouteView) return undefined
 
     const props: string[] = []
 
-    if (asyncPath) {
+    if (asyncPath && isRouteView) {
+      // Route view: async.ts default export is a loader factory
+      // Inject as `load` prop derived from the actual default export
+      props.push(
+        `load: import('nojoy/runtime').AsyncHandler<` +
+          `[Record<string, string | undefined>], ` +
+          `Awaited<ReturnType<ReturnType<typeof import('./async').default>>>>`
+      )
+    } else if (asyncPath) {
+      // Component view: named exports → individual handler props
       const exports = extractAsyncExports(asyncPath)
       for (const name of exports) {
         props.push(
@@ -129,7 +145,7 @@ export function createTypeInjector(tsModule: typeof ts): TypeInjector {
     }
 
     if (hasRoutes) {
-      props.push(`routes: import('react').ReactElement`)
+      props.push(`routes?: import('react').ReactElement`)
     }
 
     if (props.length === 0) return undefined

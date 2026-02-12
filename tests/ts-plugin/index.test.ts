@@ -121,6 +121,63 @@ describe('nojoy ts-plugin', () => {
     expect(text).toContain("import('nojoy/runtime').AsyncHandler<")
     expect(text).toContain("i18n: ReturnType<typeof import('./i18n').default>")
   })
+
+  it('injects routes type for component with [routes]/ directory', () => {
+    const info = createMockInfo()
+    const viewPath = resolve(FIXTURES, 'components/with-routes/index.tsx')
+    info.files.set(
+      viewPath,
+      'export default ({ routes }) => <div>{routes}</div>\n'
+    )
+
+    plugin.create(info as unknown as ts.server.PluginCreateInfo)
+
+    const snapshot = info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const text = snapshot!.getText(0, snapshot!.getLength())
+
+    expect(text).toContain("routes?: import('react').ReactElement")
+  })
+
+  it('injects load type for route view with async.ts default export', () => {
+    const info = createMockInfo()
+    // Route view inside [routes]/ with its own async.ts
+    const viewPath = resolve(
+      FIXTURES,
+      'components/with-routes/[routes]/[posts]/index.tsx'
+    )
+    info.files.set(
+      viewPath,
+      'export default ({ load }) => <div>{load.data}</div>\n'
+    )
+
+    plugin.create(info as unknown as ts.server.PluginCreateInfo)
+
+    const snapshot = info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const text = snapshot!.getText(0, snapshot!.getLength())
+
+    expect(text).toContain('load:')
+    expect(text).toContain("import('nojoy/runtime').AsyncHandler<")
+    expect(text).toContain('[Record<string, string | undefined>]')
+    expect(text).toContain("typeof import('./async').default")
+  })
+
+  it('does not inject load for route view without async.ts', () => {
+    const info = createMockInfo()
+    // Route view without async.ts — no load prop needed
+    const viewPath = resolve(
+      FIXTURES,
+      'components/with-routes/[routes]/[about]/index.tsx'
+    )
+    const original = 'export default () => <div>About</div>\n'
+    info.files.set(viewPath, original)
+
+    plugin.create(info as unknown as ts.server.PluginCreateInfo)
+
+    const snapshot = info.languageServiceHost.getScriptSnapshot!(viewPath)
+    const text = snapshot!.getText(0, snapshot!.getLength())
+
+    expect(text).toBe(original)
+  })
 })
 
 describe('nojoy ts-plugin reactivity', () => {
